@@ -190,4 +190,27 @@ def data_integration_for_gender():
     plt.pie(genders_infos.values(), labels=genders_infos.keys(),  autopct='%1.1f%%')
     plt.show()
     
-data_integration_for_gender()
+
+def data_integration_for_usertype():
+    data_dir = 'data/NYC'
+
+    data_files = os.listdir(data_dir)
+    usertypes_infos = {
+        'customers': 0,
+        'subscribers': 0,
+    }
+
+    for file in data_files:
+        # read data from each file into a DataFrame
+        file_path = os.path.join(data_dir, file)
+        
+        df = pd.read_csv(file_path)
+        count = df['usertype'].value_counts()
+        usertypes_infos['customers'] += count['Customer']
+        usertypes_infos['subscribers'] += count['Subscriber']
+    
+    fig, ax = plt.subplots()
+    plt.pie(usertypes_infos.values(), labels=usertypes_infos.keys(),  autopct='%1.1f%%')
+    plt.show()
+    
+data_integration_for_usertype()
