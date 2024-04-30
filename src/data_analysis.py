@@ -2,10 +2,51 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
 import os
+from datetime import datetime
 
-def get_duration_info(df, number, axs):
+
+# DURATION ANALYSIS
+
+def get_time(file, df):
+    
+    if file == 'data/NYC':
+        start = df['starttime']
+        end = df['stoptime']
+        
+        durations = list()
+        
+        for index in range(len(end)):
+            time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S.%f") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S.%f")
+            durations.append(time.total_seconds())
+    elif file == 'data/Philly':
+        start = df['start_time']
+        end = df['end_time']
+        
+        durations = list()
+        
+        for index in range(len(end)):
+            time = datetime.strptime(end[index], "%Y/%-m/%-d %H:%M") - datetime.strptime(start[index], "%Y/%-m/%-d %H:%M")
+            durations.append(time.total_seconds())
+    elif file == 'data/Boston' or file == 'data/Washington' or file == 'data/SanFrancisco' or file == 'data/Columbus' or file == 'data/Chicago':
+        start = df['started_at']
+        end = df['ended_at']
+        
+        durations = list()
+        
+        for index in range(len(end)):
+            time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
+            durations.append(time.total_seconds())
+    elif file == 'data/Austin':
+        duration = df['trip_duration_ID']
+        durations = [time * 60 for time in duration]
+    
+    durations.sort()
+    return durations
+
+def get_duration_info(df, number, axs, fig, file):
     df = df.sort_values(by='tripduration')
-    durations = df['tripduration']
+    #durations = df['tripduration']
+    durations = get_time(file, df)
 
     # Define a function to determine the cluster for each number
     def get_cluster(num):
@@ -69,18 +110,18 @@ def data_integration_for_month():
         if file[0:6] != previous_file[0:6] and previous_file != "":
             if len(dfs) != 0:
                 integrated_df = pd.concat(dfs, ignore_index=True)
-                get_duration_info(integrated_df, month, ax)
+                get_duration_info(integrated_df, month, ax, fig, data_dir)
                 dfs.clear()
                 month += 1
             else:
-                get_duration_info(df, month, ax)
+                get_duration_info(df, month, ax, fig, data_dir)
                 month += 1
         else:
             dfs.append(df)
         
         previous_file = file
         
-    get_duration_info(integrated_df, month, ax)
+    get_duration_info(integrated_df, month, ax, fig, data_dir)
 
     # Show plot
     plt.show()
@@ -122,3 +163,31 @@ def data_integration_for_year():
 
     # Show plot
     plt.show()
+
+# GENDER ANALYSIS
+
+def data_integration_for_gender():
+    data_dir = 'data/NYC'
+
+    data_files = os.listdir(data_dir)
+    genders_infos = {
+        'unknown': 0,
+        'men': 0,
+        'women': 0,
+    }
+
+    for file in data_files:
+        # read data from each file into a DataFrame
+        file_path = os.path.join(data_dir, file)
+        
+        df = pd.read_csv(file_path)
+        count = df['gender'].value_counts()
+        genders_infos['unknown'] += count[0]
+        genders_infos['men'] += count[1]
+        genders_infos['women'] += count[2]
+    
+    fig, ax = plt.subplots()
+    plt.pie(genders_infos.values(), labels=genders_infos.keys(),  autopct='%1.1f%%')
+    plt.show()
+    
+data_integration_for_gender()
