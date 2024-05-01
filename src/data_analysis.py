@@ -7,16 +7,20 @@ from datetime import datetime
 
 # DURATION ANALYSIS
 
-def get_time(file, df):
+def get_time(file, df, file_name):
     
-    if file == 'data/NYC':
+    if file == 'data/NYC' or file == 'data/Boston':
         start = df['starttime']
         end = df['stoptime']
         
         durations = list()
         
+        if int(file_name[4:6]) < 4 and file == 'data/Boston':
+            format = "%Y-%m-%d %H:%M:%S"
+        else:
+            format = "%Y-%m-%d %H:%M:%S.%f"
         for index in range(len(end)):
-            time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S.%f") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S.%f")
+            time = datetime.strptime(end[index], format) - datetime.strptime(start[index], format)
             durations.append(time.total_seconds())
     elif file == 'data/Philly':
         start = df['start_time']
@@ -27,7 +31,7 @@ def get_time(file, df):
         for index in range(len(end)):
             time = datetime.strptime(end[index], "%Y/%-m/%-d %H:%M") - datetime.strptime(start[index], "%Y/%-m/%-d %H:%M")
             durations.append(time.total_seconds())
-    elif file == 'data/Boston' or file == 'data/Washington' or file == 'data/SanFrancisco' or file == 'data/Columbus' or file == 'data/Chicago':
+    elif file == 'data/Washington' or file == 'data/SanFrancisco' or file == 'data/Columbus' or file == 'data/Chicago':
         start = df['started_at']
         end = df['ended_at']
         
@@ -43,10 +47,10 @@ def get_time(file, df):
     durations.sort()
     return durations
 
-def get_duration_info(df, number, axs, fig, file):
+def get_duration_info(df, number, axs, fig, file, file_name):
     df = df.sort_values(by='tripduration')
     #durations = df['tripduration']
-    durations = get_time(file, df)
+    durations = get_time(file, df, file_name)
 
     # Define a function to determine the cluster for each number
     def get_cluster(num):
@@ -92,7 +96,7 @@ def get_duration_info(df, number, axs, fig, file):
 # Read the CSV file into a DataFrame
 
 def data_integration_for_month():
-    data_dir = 'data/NYC'
+    data_dir = 'data/Boston'
 
     data_files = os.listdir(data_dir)
 
@@ -107,23 +111,22 @@ def data_integration_for_month():
         file_path = os.path.join(data_dir, file)
         
         df = pd.read_csv(file_path)
+        if file[0:4] != previous_file[0:4] and previous_file != "":
+            break
+        
+        # if file is different from the the previous one then we can integrathe the file in the list
         if file[0:6] != previous_file[0:6] and previous_file != "":
-            if len(dfs) != 0:
-                integrated_df = pd.concat(dfs, ignore_index=True)
-                get_duration_info(integrated_df, month, ax, fig, data_dir)
-                dfs.clear()
-                month += 1
-            else:
-                get_duration_info(df, month, ax, fig, data_dir)
-                month += 1
-        else:
-            dfs.append(df)
+            integrated_df = pd.concat(dfs, ignore_index=True)
+            get_duration_info(integrated_df, month, ax, fig, data_dir, previous_file)
+            month += 1
+            dfs.clear()
+        dfs.append(df)
         
         previous_file = file
-        
-    get_duration_info(integrated_df, month, ax, fig, data_dir)
+    
+    integrated_df = pd.concat(dfs, ignore_index=True)
+    get_duration_info(integrated_df, month, ax, fig, data_dir, previous_file)
 
-    # Show plot
     plt.show()
     
 def data_integration_for_year():
@@ -167,7 +170,7 @@ def data_integration_for_year():
 # GENDER ANALYSIS
 
 def data_integration_for_gender():
-    data_dir = 'data/NYC'
+    data_dir = 'data/Boston'
 
     data_files = os.listdir(data_dir)
     genders_infos = {
