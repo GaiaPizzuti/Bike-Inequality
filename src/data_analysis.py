@@ -1,14 +1,34 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
 import os
 from datetime import datetime
 
 
+def get_missing_data(df):
+    # Get the number of missing data points per column
+    missing_values_count = df.isnull().sum()
+
+    # How many total missing values do we have?
+    total_cells = np.prod(df.shape)
+    total_missing = missing_values_count.sum()
+
+    # Percent of data that is missing
+    percent_missing = (total_missing/total_cells) * 100
+    if percent_missing == 0.0:
+        print("No missing data")
+    else:
+        print(missing_values_count[:])
+
+    return percent_missing
+
 # DURATION ANALYSIS
 
 def get_time(file, df):
-    
+    '''
+    get the duration of the trip for each file
+    '''
     if file == 'data/NYC':
         start = df['starttime']
         end = df['stoptime']
@@ -50,6 +70,9 @@ def get_time(file, df):
     return durations
 
 def get_duration_info(df, number, axs, fig, file):
+    '''
+    function to get the duration information for each file, cluster them and plot the frequency of each cluster
+    '''
     if file == 'data/NYC' or file == 'data/Boston':
         df = df.sort_values(by='tripduration')
     elif file == 'data/Washington':
@@ -99,7 +122,7 @@ def get_duration_info(df, number, axs, fig, file):
 
 # Read the CSV file into a DataFrame
 
-def data_integration_for_month(data_dir):
+def data_for_month(data_dir):
 
     data_files = os.listdir(data_dir)
 
@@ -132,7 +155,7 @@ def data_integration_for_month(data_dir):
 
     plt.show()
     
-def data_integration_for_year(data_dir):
+def data_for_year(data_dir):
     '''
     to adjust
     '''
@@ -167,7 +190,7 @@ def data_integration_for_year(data_dir):
 
 # GENDER ANALYSIS
 
-def data_integration_for_gender(data_dir):
+def data_for_gender(data_dir):
 
     data_files = os.listdir(data_dir)
     genders_infos = {
@@ -191,7 +214,7 @@ def data_integration_for_gender(data_dir):
     plt.show()
     
 
-def data_integration_for_usertype(data_dir):
+def data_for_usertype(data_dir):
 
     data_files = os.listdir(data_dir)
     usertypes_infos = {
@@ -211,6 +234,18 @@ def data_integration_for_usertype(data_dir):
     fig, ax = plt.subplots()
     plt.pie(usertypes_infos.values(), labels=usertypes_infos.keys(),  autopct='%1.1f%%')
     plt.show()
-    
-data = 'data/Washington'
-data_integration_for_month(data)
+
+
+if __name__ == '__main__':
+    data_dir = 'data'
+    for file in os.listdir(data_dir):
+        print('City:', file)
+        data_dir_city = os.path.join(data_dir, file)
+        data_files = os.listdir(data_dir_city)
+        for file in data_files:
+            file_path = os.path.join(data_dir_city, file)
+            df = pd.read_csv(file_path)
+            print(get_missing_data(df))
+        #data_for_month(data_dir_city)
+        #data_for_gender(data_dir_city)
+        #data_for_usertype(data_dir_city)
