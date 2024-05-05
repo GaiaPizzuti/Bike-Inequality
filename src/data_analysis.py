@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 
-def get_missing_data(df):
+def get_missing_data(df, data_dir):
     # Get the number of missing data points per column
     missing_values_count = df.isnull().sum()
 
@@ -16,10 +16,17 @@ def get_missing_data(df):
 
     # Percent of data that is missing
     percent_missing = (total_missing/total_cells) * 100
-    if percent_missing == 0.0:
-        print("No missing data")
-    else:
-        print(missing_values_count[:])
+        
+    if 'gender' not in df:
+        df['gender'] = ['unknown' for i in range(len(df))]
+        df.to_csv(data_dir, index=False)
+    
+    if 'user_type' in df:
+        df = df.rename(columns={'user_type': 'usertype'})
+        df.to_csv(data_dir, index=False)
+    elif 'usertype' not in df:
+        df['usertype'] = ['unknown' for i in range(len(df))]
+        df.to_csv(data_dir, index=False)
 
     return percent_missing
 
@@ -29,7 +36,7 @@ def get_time(file, df):
     '''
     get the duration of the trip for each file
     '''
-    if file == 'data/NYC':
+    if file == 'data\\NYC':
         start = df['starttime']
         end = df['stoptime']
         
@@ -38,7 +45,7 @@ def get_time(file, df):
         for index in range(len(end)):
             time = datetime.strptime(end[index], '%Y-%m-%d %H:%M:%S.%f') - datetime.strptime(start[index], '%Y-%m-%d %H:%M:%S.%f')
             durations.append(time.total_seconds())
-    elif file == 'data/Philly':
+    elif file == 'data\\Philly':
         start = df['start_time']
         end = df['end_time']
         
@@ -47,7 +54,7 @@ def get_time(file, df):
         for index in range(len(end)):
             time = datetime.strptime(end[index], "%Y/%-m/%-d %H:%M") - datetime.strptime(start[index], "%Y/%-m/%-d %H:%M")
             durations.append(time.total_seconds())
-    elif file == 'data/SanFrancisco' or file == 'data/Columbus' or file == 'data/Chicago':
+    elif file == 'data\\Columbus' or file == 'data\\Chicago':
         start = df['started_at']
         end = df['ended_at']
         
@@ -56,15 +63,18 @@ def get_time(file, df):
         for index in range(len(end)):
             time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
             durations.append(time.total_seconds())
-    elif file == 'data/Boston':
+    elif file == 'data\\Boston':
         duration = df['tripduration']
         durations = [time for time in duration]
-    elif file == 'data/Washington':
+    elif file == 'data\\Washington':
         duration = df['Duration']
         durations = [time for time in duration]
-    elif file == 'data/Austin':
+    elif file == 'data\\Austin':
         duration = df['trip_duration_ID']
         durations = [time * 60 for time in duration]
+    elif file == 'data\\SanFrancisco':
+        duration = df['duration_sec']
+        durations = [time for time in duration]
     
     durations.sort()
     return durations
@@ -73,10 +83,15 @@ def get_duration_info(df, number, axs, fig, file):
     '''
     function to get the duration information for each file, cluster them and plot the frequency of each cluster
     '''
-    if file == 'data/NYC' or file == 'data/Boston':
+    print(file)
+    if file == 'data\\NYC' or file == 'data\\Boston':
         df = df.sort_values(by='tripduration')
-    elif file == 'data/Washington':
+    elif file == 'data\\Washington':
         df = df.sort_values(by='Duration')
+    elif file == 'data\\SanFrancisco':
+        df = df.sort_values(by='duration_sec')
+    elif file == 'data\\Austin':
+        df = df.sort_values(by='trip_duration_ID')
     durations = get_time(file, df)
 
     # Define a function to determine the cluster for each number
@@ -206,8 +221,9 @@ def data_for_gender(data_dir):
         df = pd.read_csv(file_path)
         count = df['gender'].value_counts()
         genders_infos['unknown'] += count[0]
-        genders_infos['men'] += count[1]
-        genders_infos['women'] += count[2]
+        if len(count) > 1:
+            genders_infos['men'] += count[1]
+            genders_infos['women'] += count[2]
     
     fig, ax = plt.subplots()
     plt.pie(genders_infos.values(), labels=genders_infos.keys(),  autopct='%1.1f%%')
@@ -218,6 +234,7 @@ def data_for_usertype(data_dir):
 
     data_files = os.listdir(data_dir)
     usertypes_infos = {
+        'unknown': 0,
         'customers': 0,
         'subscribers': 0,
     }
@@ -228,16 +245,20 @@ def data_for_usertype(data_dir):
         
         df = pd.read_csv(file_path)
         count = df['usertype'].value_counts()
-        usertypes_infos['customers'] += count['Customer']
-        usertypes_infos['subscribers'] += count['Subscriber']
+        if 'unknown' in count:
+            usertypes_infos['unknown'] += count['unknown']
+        if 'Customer' in count:
+            usertypes_infos['customers'] += count['Customer']
+            usertypes_infos['subscribers'] += count['Subscriber']
     
     fig, ax = plt.subplots()
     plt.pie(usertypes_infos.values(), labels=usertypes_infos.keys(),  autopct='%1.1f%%')
+    plt.legend(loc='upper right')
     plt.show()
-
 
 if __name__ == '__main__':
     data_dir = 'data'
+    missing_data = list()
     for file in os.listdir(data_dir):
         print('City:', file)
         data_dir_city = os.path.join(data_dir, file)
@@ -245,7 +266,10 @@ if __name__ == '__main__':
         for file in data_files:
             file_path = os.path.join(data_dir_city, file)
             df = pd.read_csv(file_path)
-            print(get_missing_data(df))
+            missing_data.append(get_missing_data(df, file_path))
+        
+        print('Missing data:', sum(missing_data) / len(missing_data))
+        missing_data.clear()
         #data_for_month(data_dir_city)
         #data_for_gender(data_dir_city)
-        #data_for_usertype(data_dir_city)
+        data_for_usertype(data_dir_city)
