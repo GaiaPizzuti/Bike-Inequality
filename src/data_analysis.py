@@ -59,21 +59,21 @@ def get_time(file, df, month_to_analyse):
     else:
         start = df['start_time']
         end = df['stop_time']
-        if file == 'data\\NYC':
+        if file[:8] == 'data\\NYC':
             for index in range(len(end)):
                 time = datetime.strptime(end[index], '%Y-%m-%d %H:%M:%S.%f') - datetime.strptime(start[index], '%Y-%m-%d %H:%M:%S.%f')
                 durations.append(time.total_seconds())
-        elif file == 'data\\Philly':
+        elif file[:11] == 'data\\Philly':
             for index in range(len(end)):
                 month = datetime.strptime(end[index], '%Y-%m-%d %H:%M:%S').month
                 if month_to_analyse == month:
                     time = datetime.strptime(end[index], "%Y/%-m/%-d %H:%M") - datetime.strptime(start[index], "%Y/%-m/%-d %H:%M")
                     durations.append(time.total_seconds())
-        elif file == 'data\\Columbus':
+        elif file[:12] == 'data\\Columbus':
             for index in range(len(end)):
                 time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
                 durations.append(time.total_seconds())
-        elif file == 'data\\Chicago':        
+        elif file[:12] == 'data\\Chicago':        
             for index in range(len(end)):
                 time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
                 durations.append(time.total_seconds())
@@ -92,15 +92,15 @@ def get_duration_info(df, number, axs, fig, file):
         if type(num) == str:
             num = int(float(num.replace(',', '')))
         if num < 500:
-            return "< 500"
+            return "<500"
         elif num < 1000:
-            return "< 1000"
+            return "<1000"
         elif num < 10000:
-            return "< 10000"
+            return "<10000"
         elif num < 100000:
-            return "< 100000"
+            return "<100000"
         else:
-            return "> 100000"
+            return ">100000"
 
     # Group numbers into clusters
     clusters = [get_cluster(num) for num in durations]
@@ -109,14 +109,16 @@ def get_duration_info(df, number, axs, fig, file):
     frequency = Counter(clusters)
 
     # Extract cluster names and their frequencies
-    cluster_names = list(frequency.keys())
-    cluster_frequencies = list(frequency.values())
-    total = sum(cluster_frequencies)
-    for value in range(len(cluster_frequencies)):
-        cluster_frequencies[value] /= total
+    for key in frequency:
+        frequency[key] /= sum(frequency.values())
     
+    return frequency
+
+def prepare_plot(axs, fig, frequency, number):
     x = number // 3
     y = number % 3
+    cluster_names = list(frequency.keys())
+    cluster_frequencies = list(frequency.values())
     axs[x, y].bar(cluster_names, cluster_frequencies)
     for index in range(len(cluster_names)):
         axs[x, y].text(index, cluster_frequencies[index], str(round(cluster_frequencies[index], 5)), ha='center')
@@ -135,9 +137,6 @@ def get_duration_info(df, number, axs, fig, file):
 def data_for_month(data_dir):
 
     data_files = os.listdir(data_dir)
-
-    dfs = list()
-    previous_file = ""
     month = 0
 
     fig, ax = plt.subplots(4, 3)
@@ -145,70 +144,53 @@ def data_for_month(data_dir):
     for file in data_files:
         # read data from each file into a DataFrame
         file_path = os.path.join(data_dir, file)
-        
         df = pd.read_csv(file_path)
-        if file[0:4] != previous_file[0:4] and previous_file != "":
-            break
         
-        # if file is different from the the previous one then we can integrathe the file in the list
-        if file[0:6] != previous_file[0:6] and previous_file != "":
-            integrated_df = pd.concat(dfs, ignore_index=True)
-            if data_dir == 'data\\Philly':
-                for _ in range(3):
-                    get_duration_info(integrated_df, month, ax, fig, data_dir)
-                    month += 1
-            else:
-                month = int(previous_file[4:6]) - 1
-                get_duration_info(integrated_df, month, ax, fig, data_dir)
-            dfs.clear()
-        dfs.append(df)
-        
-        previous_file = file
-    
-    if data_dir == 'data\\Philly':
-        for _ in range(3):
-            get_duration_info(integrated_df, month, ax, fig, data_dir)
-            month += 1
-    else:
-        month = int(previous_file[4:6]) - 1
-        integrated_df = pd.concat(dfs, ignore_index=True)
-        get_duration_info(integrated_df, month, ax, fig, data_dir)
+        if data_dir[:11] == 'data\\Philly':
+            for _ in range(3):
+                frequency = get_duration_info(df, month, ax, fig, data_dir)
+                prepare_plot(ax, fig, frequency, month)
+                month += 1
+        else:
+            month = int(file[4:6]) - 1
+            frequency = get_duration_info(df, month, ax, fig, data_dir)
+            prepare_plot(ax, fig, frequency, month)
     
     plt.title(data_dir)
     plt.show()
     
 def data_for_year(data_dir):
     '''
-    to adjust
+    function to plot the data for each year
     '''
 
-    data_files = os.listdir(data_dir)
-
-    dfs = list()
-    previous_file = ""
-    year = 0
-
-    fig, ax = plt.subplots(4, 3)
-
-    for file in data_files:
-        # read data from each file into a DataFrame
-        file_path = os.path.join(data_dir, file)
-        
-        df = pd.read_csv(file_path)
-        if file[0:4] != previous_file[0:4] and previous_file != "":
-            integrated_df = pd.concat(dfs, ignore_index=True)
-            get_duration_info(integrated_df, year, ax)
-            dfs.clear()
-            year += 1
-        dfs.append(df)
-        
-        previous_file = file
-        
-    integrated_df = pd.concat(dfs, ignore_index=True)
-    get_duration_info(integrated_df, year, ax)
-
+    fig, ax = plt.subplots(2, 3)
+    yearly_frequency = {
+        '<500': 0,
+        '<1000': 0,
+        '<10000': 0,
+        '<100000': 0,
+        '>100000': 0
+    }
+    
+    
+    for year in os.listdir(data_dir):
+        year_path = os.path.join(data_dir, year)
+        for file in os.listdir(year_path):
+            file_path = os.path.join(year_path, file)
+            df = pd.read_csv(file_path)
+            frequency = get_duration_info(df, year, ax, fig, data_dir)
+            for key in frequency:
+                yearly_frequency[key] += frequency[key]
+        year = int(year) - 2018
+        for key in yearly_frequency:
+            yearly_frequency[key] /= sum(yearly_frequency.values())
+        prepare_plot(ax, fig, yearly_frequency, year)
+        frequency.clear()
+    
     # Show plot
     plt.show()
+
 
 # GENDER ANALYSIS
 
@@ -323,17 +305,45 @@ if __name__ == '__main__':
     for file in os.listdir(data_dir):
         print('City:', file)
         data_dir_city = os.path.join(data_dir, file)
+        for city_file in os.listdir(data_dir_city):
+            print('Year:', city_file)
+            data_dir_city_year = os.path.join(data_dir_city, city_file)
+            
+            for year in os.listdir(data_dir_city_year):
+                file_path = os.path.join(data_dir_city_year, year)
+                df = pd.read_csv(file_path)
+                prepare_data(df, file_path)
+                missing_data.append(get_missing_data(df, file_path))
+                
+        
+        """
         data_files = os.listdir(data_dir_city)
-        for file in data_files:
-            file_path = os.path.join(data_dir_city, file)
-            df = pd.read_csv(file_path)
-            prepare_data(df, file_path)
-            missing_data.append(get_missing_data(df, file_path))
+        for year in data_files:
+            data_dir_city_year = os.path.join(data_dir_city, year)
+            data_files = os.listdir(data_dir_city_year)
+            for file in data_files:
+                file_path = os.path.join(data_dir_city_year, file)
+                df = pd.read_csv(file_path)
+                prepare_data(df, file_path)
+                missing_data.append(get_missing_data(df, file_path))
+        """
         
         print('Missing data:', sum(missing_data) / len(missing_data))
         missing_data.clear()
-        data_for_month(data_dir_city)
+        
+        """ # plot date for each month
+        for year in os.listdir(data_dir_city):
+            print('Year:', year)
+            data_dir_city_year = os.path.join(data_dir_city, year)
+            data_for_month(data_dir_city_year) """
+        
+        # plot data for each year
+        data_for_year(data_dir_city)
+        
+        # plot data for gender
         #data_for_gender(data_dir_city)
+        
+        # plot data for usertype
         #data_for_usertype(data_dir_city)
     
     """ data_dir = 'data/Washington'
