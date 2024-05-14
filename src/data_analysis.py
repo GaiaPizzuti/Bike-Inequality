@@ -231,18 +231,24 @@ def data_for_gender(data_dir):
             # plot the percentage of each data
             if 'unknown' in count:
                 genders_infos['unknown'] += count.loc['unknown']
-            if 1 in count:
-                genders_infos['unknown'] += count[0]
-                genders_infos['men'] += count[1]
-                genders_infos['women'] += count[2]
+            if '1' in count:
+                genders_infos['unknown'] += count.loc['0']
+                genders_infos['men'] += count.loc['1']
+                genders_infos['women'] += count.loc['2']
+            if 'Male' in count:
+                if 'Unknown' in count:
+                    genders_infos['unknown'] += count.loc['Unknown']
+                genders_infos['men'] += count.loc['Male']
+                genders_infos['women'] += count.loc['Female']
     
+    print(genders_infos)
     if genders_infos['men'] != 0 or genders_infos['women'] != 0:
         fig, ax = plt.subplots()
         plt.title(data_dir)
         plt.pie(genders_infos.values(), labels=genders_infos.keys(),  autopct='%1.1f%%')
         plt.show()
     else:
-        print('Gender data not available in this city:', data_dir[6:])
+        print('Gender data not available in this city:', data_dir[5:])
     
 
 def data_for_usertype(data_dir):
@@ -316,7 +322,6 @@ def data_for_usertype(data_dir):
     
     fig, ax = plt.subplots()
     plt.title(data_dir)
-    print(usertypes_infos)
     plt.pie(usertypes_infos.values(), labels=usertypes_infos.keys(),  autopct='%1.1f%%')
     plt.show()
 
@@ -362,22 +367,25 @@ def cancel_column(df, data_dir):
         df.drop(columns=['start_time'], inplace=True)
         df.to_csv(data_dir, index=False)
 
+def first_read_data(data_dir_city):
+    for city_file in os.listdir(data_dir_city):
+        data_dir_city_year = os.path.join(data_dir_city, city_file)
+        for year in os.listdir(data_dir_city_year):
+            file_path = os.path.join(data_dir_city_year, year)
+            df = pd.read_csv(file_path, dtype='object')
+            prepare_data(df, file_path)
+            missing_data.append(get_missing_data(df, file_path))
+    
+    print('Missing data:', sum(missing_data) / len(missing_data))
+    missing_data.clear()
+
 if __name__ == '__main__':
     data_dir = 'data'
     missing_data = list()
     for file in os.listdir(data_dir):
         print('City:', file)
         data_dir_city = os.path.join(data_dir, file)
-        for city_file in os.listdir(data_dir_city):
-            data_dir_city_year = os.path.join(data_dir_city, city_file)
-            for year in os.listdir(data_dir_city_year):
-                file_path = os.path.join(data_dir_city_year, year)
-                df = pd.read_csv(file_path, dtype='object')
-                prepare_data(df, file_path)
-                missing_data.append(get_missing_data(df, file_path))
-        
-        print('Missing data:', sum(missing_data) / len(missing_data))
-        missing_data.clear()
+        #first_read_data(data_dir_city)
         
         # plot date for each month
         """ for year in os.listdir(data_dir_city):
@@ -389,10 +397,10 @@ if __name__ == '__main__':
         #data_for_year(data_dir_city)
         
         # plot data for gender
-        #data_for_gender(data_dir_city)
+        data_for_gender(data_dir_city)
         
         # plot data for usertype
-        data_for_usertype(data_dir_city)
+        #data_for_usertype(data_dir_city)
     
     """ data_dir = 'data/Washington'
     for file in os.listdir(data_dir):
