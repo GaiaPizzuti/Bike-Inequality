@@ -4,29 +4,27 @@ import matplotlib.pyplot as plt
 from collections import Counter
 import os
 from datetime import datetime
-
-
-def get_missing_data(df, data_dir):
-    # Get the number of missing data points per column
-    missing_values_count = df.isnull().sum()
-
-    # How many total missing values do we have?
-    total_cells = np.prod(df.shape)
-    total_missing = missing_values_count.sum()
-
-    # Percent of data that is missing
-    percent_missing = (total_missing/total_cells) * 100
-
-    return percent_missing
+from data_cleaning import first_read_data
 
 # DURATION ANALYSIS
 
 def get_time(df, number_to_analyse, full_path):
     '''
-    get the duration of the trip for each file
+    function to get the duration of the trip for each file
+    If the file has the duration column (in seconds or in minutes) we can directly get the duration
+    Otherwise, we have to calculate the duration by subtracting the start time from the end time
+    The function takes in consideration the format of the date for each file
+    
+    Input:
+        - df: DataFrame
+        - number_to_analyse: int
+        - full_path: str
+    Output:
+        - durations: list
     '''
     durations = list()
     if 'trip_duration_seconds' in df or 'trip_duration_minutes' in df:
+        
         if 'trip_duration_seconds' in df:
             duration = df['trip_duration_seconds']
             durations = [time for time in duration]
@@ -34,105 +32,144 @@ def get_time(df, number_to_analyse, full_path):
             duration = df['trip_duration_minutes']
             durations = [time * 60 for time in duration]
     else:
+        
         start = df['start_time']
         end = df['stop_time']
-        format_dictionary = {
-            'data\\NYC': {
-                '202102': "%Y-%m-%d %H:%M:%S",
-                'default': "%Y-%m-%d %H:%M:%S.%f"
-            },
-            'data\\Philly': {
-                'default': "%Y-%m-%d %H:%M:%S"
-            },
-            'data\\Columbus': {
-                'default': "%Y-%m-%d %H:%M:%S"
-            },
-            'data\\Chicago': {
-                'default': "%Y-%m-%d %H:%M:%S"
-            },
-            'data\\Boston': {
-                '202304': "%Y-%m-%d %H:%M:%S",
-                'default': "%Y-%m-%d %H:%M:%S.%f"
-            }
-        }
+        
         if 'NYC' in full_path:
             if full_path[14:20] >= '202102':
-                date_format = "%Y-%m-%d %H:%M:%S"
+                format = "%Y-%m-%d %H:%M:%S"
             else:
-                date_format = "%Y-%m-%d %H:%M:%S.%f"
-            for index in range(len(end)):
-                time = datetime.strptime(end[index], date_format) - datetime.strptime(start[index], date_format)
-                durations.append(time.total_seconds())
-        elif 'Philly' in full_path:
-            for index in range(len(end)):
+                format = "%Y-%m-%d %H:%M:%S.%f"
+        else:
+            format = "%Y-%m-%d %H:%M:%S"
+        
+        for index in range(len(end)):
+            if 'Philly' in full_path or ('Chicago' in full_path and (full_path[17:23] < '202004' or '2020Q1' in full_path)):
                 month = datetime.strptime(end[index], '%Y-%m-%d %H:%M:%S').month
                 if number_to_analyse == month:
-                    time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
+                    time = datetime.strptime(end[index], format) - datetime.strptime(start[index], format)
                     durations.append(time.total_seconds())
-        elif 'Columbus' in full_path:
-            for index in range(len(end)):
-                time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
-                durations.append(time.total_seconds())
-        elif 'Chicago' in full_path:        
-            for index in range(len(end)):
-                time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
-                durations.append(time.total_seconds())
-        elif 'Boston' in full_path:
-            for index in range(len(end)):
-                time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
-                durations.append(time.total_seconds())
-        elif 'SanFrancisco' in full_path:
-            for index in range(len(end)):
-                time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
-                durations.append(time.total_seconds())
-        elif 'Washington' in full_path:
-            for index in range(len(end)):
-                time = datetime.strptime(end[index], "%Y-%m-%d %H:%M:%S") - datetime.strptime(start[index], "%Y-%m-%d %H:%M:%S")
-                durations.append(time.total_seconds())
+            time = datetime.strptime(end[index], format) - datetime.strptime(start[index], format)
+            durations.append(time.total_seconds())
         
     durations.sort()
     return durations
 
-def get_duration_info(df, number, axs, fig, full_path):
+def get_cluster(num):
+    '''
+    function to determine the cluster for each number
+    This function is used for the linear plot of the data to cluster the durations into 5 clusters
+    
+    Input:
+        - num: int
+        
+    Output:
+        - str
+    '''
+    if type(num) == str:
+        num = int(float(num.replace(',', '')))
+    if num < 100:
+        return "<100"
+    elif num < 1000:
+        return "<1000"
+    elif num < 10000:
+        return "<10000"
+    elif num < 100000:
+        return "<100000"
+    else:
+        return ">100000"
+
+def get_duration_info(df, number, full_path, linear=False):
     '''
     function to get the duration information for each file, cluster them and plot the frequency of each cluster
+    This function calls the get_time function to get the duration of the trip for each file and then acts accordingly to the linear flag:
+    if it is True, it clusters the durations into 5 clusters, otherwise it plots the frequency of each duration using a log scale
+    
+    Input:
+        - df: DataFrame
+        - number: int
+        - full_path: str
+        - linear: bool
+        
+    Output:
+        - frequency: dict
     '''
     durations = get_time(df, number, full_path)
 
-    # Define a function to determine the cluster for each number
-    def get_cluster(num):
-        if type(num) == str:
-            num = int(float(num.replace(',', '')))
-        if num < 500:
-            return "<500"
-        elif num < 1000:
-            return "<1000"
-        elif num < 10000:
-            return "<10000"
-        elif num < 100000:
-            return "<100000"
-        else:
-            return ">100000"
+    if linear:
+        # Group numbers into clusters
+        clusters = [get_cluster(num) for num in durations]
 
-    # Group numbers into clusters
-    clusters = [get_cluster(num) for num in durations]
-
-    # Calculate frequency of each cluster
-    frequency = Counter(clusters)
+        # Calculate frequency of each cluster
+        frequency = Counter(clusters)
+    else:
+        frequency = Counter(durations)
 
     # Extract cluster names and their frequencies
-    total = sum(frequency.values())
-    for key in frequency:
-        frequency[key] /= total
+    if linear:
+        total = sum(frequency.values())
+        for key in frequency:
+            frequency[key] /= total
     
     return frequency
 
-def prepare_plot(axs, fig, frequency, number, data_dir):
+def prepare_plot_log(axs, fig, frequency, number, data_dir):
+    '''
+    function to prepare the plot for the log scale
+    
+    Input:
+        - axs: list
+        - fig: Figure
+        - frequency: dict
+        - number: int
+        - data_dir: str
+    
+    Output:
+        - None
+    '''
     x = number // 3
     y = number % 3
+    
     cluster_names = list(frequency.keys())
     cluster_frequencies = list(frequency.values())
-    axs[x, y].bar(cluster_names, cluster_frequencies)
+    
+    bin_edges = np.logspace(np.log10(cluster_names[0]), np.log10(cluster_names[-1]), num=len(cluster_names)+1)
+    bar_width = np.diff(bin_edges)
+    
+    axs[x, y].bar(bin_edges[:-1], cluster_frequencies, width=bar_width, align='center')
+    axs[x, y].set_xscale('log')
+    axs[x, y].set_yscale('log')
+
+    # Add labels and title
+    for ax in axs.flat:
+        ax.set(xlabel='Trip duration', ylabel='Frequency')
+
+    title = 'Frequency of Trip Duration for ' + data_dir
+    fig.suptitle(title)
+
+def prepare_plot_linear(axs, fig, frequency, number, data_dir):
+    '''
+    Function to prepare the plot for the linear scale
+    
+    Input:
+        - axs: list
+        - fig: Figure
+        - frequency: dict
+        - number: int
+        - data_dir: str
+    
+    Output:
+        - None
+    '''
+    x = number // 3
+    y = number % 3
+    
+    cluster_names = list(frequency.keys())
+    cluster_frequencies = list(frequency.values())
+    
+    axs[x, y].bar(cluster_names, cluster_frequencies, align='center')
+    
     for index in range(len(cluster_names)):
         axs[x, y].text(index, cluster_frequencies[index], str(round(cluster_frequencies[index], 5)), ha='center')
 
@@ -146,14 +183,59 @@ def prepare_plot(axs, fig, frequency, number, data_dir):
     title = 'Frequency of Trip Duration for ' + data_dir
     fig.suptitle(title)
 
+def prepare_plot(axs, fig, frequency, number, data_dir, linear=False):
+    '''
+    Function to prepare the plot for the data
+    
+    Input:
+        - axs: list
+        - fig: Figure
+        - frequency: dict
+        - number: int
+        - data_dir: str
+        - linear: bool
+        
+    Output:
+        - None
+    '''
+    if linear:
+        prepare_plot_linear(axs, fig, frequency, number, data_dir)
+    else:
+        prepare_plot_log(axs, fig, frequency, number, data_dir)
+
 # Read the CSV file into a DataFrame
 
-def data_for_month(data_dir):
+def data_for_month(data_dir, year_flag=False, linear=False):
+    '''
+    Function to plot the trip duration frequency for each month. The function takes two flags: year_flag and linear.
+    If year_flag is True, the function plots the data for each year, otherwise it plots the data for each month.
+    If linear is True, the function clusters the data into 5 clusters, otherwise it plots the data using a log scale.
+    
+    Input:
+        - data_dir: str
+        - year_flag: bool
+        - linear: bool
+        
+    Output:
+        - frequency_dict: dict
+    '''
 
     data_files = os.listdir(data_dir)
     month = 0
 
-    fig, ax = plt.subplots(4, 3)
+    if not year_flag:
+        if linear:
+            fig, ax = plt.subplots(4, 3)
+        else:
+            fig, ax = plt.subplots(4, 3, sharex=True)
+    if linear:
+        frequency_dict = {
+            '<100': 0,
+            '<1000': 0,
+            '<10000': 0,
+            '<100000': 0,
+            '>100000': 0
+        }
 
     for file in data_files:
         # read data from each file into a DataFrame
@@ -164,44 +246,58 @@ def data_for_month(data_dir):
         if 'Philly' in data_dir or ('Chicago' in file_path and file_path[18:24] < '202004') or  ('Chicago' in file_path and '2020Q1' in file_path):
             month = (int(file[5:6]) - 1) * 3
             for _ in range(3):
-                frequency = get_duration_info(df, month, ax, fig, file_path)
-                prepare_plot(ax, fig, frequency, month, data_dir)
+                frequency = get_duration_info(df, month, file_path, linear)
+                if not year_flag:
+                    prepare_plot(ax, fig, frequency, month, data_dir, linear)
                 month += 1
         else:
             month = int(file[4:6]) - 1
-            frequency = get_duration_info(df, month, ax, fig, file_path)
-            prepare_plot(ax, fig, frequency, month, data_dir)
+            frequency = get_duration_info(df, month, file_path, linear)
+            if not year_flag:
+                prepare_plot(ax, fig, frequency, month, data_dir, linear)
+        if linear:
+            for key in frequency:
+                frequency_dict[key] += frequency[key]
+
+    if not year_flag:
+        plt.show()
     
-    plt.show()
-    
-def data_for_year(data_dir):
+    if linear:
+        return frequency_dict
+    return frequency
+
+def data_for_year(data_dir, linear=False):
     '''
     function to plot the data for each year
     '''
 
     fig, ax = plt.subplots(2, 3)
-    yearly_frequency = {
-        '<500': 0,
-        '<1000': 0,
-        '<10000': 0,
-        '<100000': 0,
-        '>100000': 0
-    }
-    
+    if linear:
+        yearly_frequency = {
+            '<100': 0,
+            '<1000': 0,
+            '<10000': 0,
+            '<100000': 0,
+            '>100000': 0
+        }
+    else:
+        yearly_frequency = dict()
     
     for year in os.listdir(data_dir):
         year_path = os.path.join(data_dir, year)
-        for file in os.listdir(year_path):
-            file_path = os.path.join(year_path, file)
-            df = pd.read_csv(file_path, dtype='object')
-            frequency = get_duration_info(df, year, ax, fig, file_path)
-            for key in frequency:
+        frequency = data_for_month(year_path, year_flag=True, linear=linear)
+        for key in frequency:
+            if key in yearly_frequency:
                 yearly_frequency[key] += frequency[key]
+            else:
+                yearly_frequency[key] = frequency[key]
+        if linear:
+            total = sum(yearly_frequency.values())
+            for key in yearly_frequency:
+                yearly_frequency[key] /= total
+        
         year = int(year) - 2018
-        total = sum(yearly_frequency.values())
-        for key in yearly_frequency:
-            yearly_frequency[key] /= total
-        prepare_plot(ax, fig, yearly_frequency, year, year_path)
+        prepare_plot(ax, fig, yearly_frequency, year, year_path, linear=linear)
         frequency.clear()
     
     # Show plot
@@ -210,13 +306,38 @@ def data_for_year(data_dir):
 
 # GENDER ANALYSIS
 
-def data_for_gender(data_dir):
+def remove_zeros(data):
+    to_remove = list()
+    for key in data:
+        if data[key] == 0:
+            to_remove.append(key)
+    for key in to_remove:
+        data.pop(key)
 
+def data_for_gender(data_dir):
+    '''
+    Function to plot the distribution of the trip between men and women
+    
+    Input:
+        - data_dir: str
+        
+    Output:
+        - None
+    '''
     data_files = os.listdir(data_dir)
     genders_infos = {
         'unknown': 0,
         'men': 0,
         'women': 0,
+    }
+    
+    meaning_gender = {
+        '0': 'unknown',
+        '1': 'men',
+        '2': 'women',
+        'Male': 'men',
+        'Female': 'women',
+        'Unknown': 'unknown'
     }
 
     for year in data_files:
@@ -229,53 +350,56 @@ def data_for_gender(data_dir):
             df = pd.read_csv(file_path, dtype='object')
             count = df['gender'].value_counts()
             # plot the percentage of each data
-            if 'unknown' in count:
-                genders_infos['unknown'] += count.loc['unknown']
-            if '1' in count:
-                genders_infos['unknown'] += count.loc['0']
-                genders_infos['men'] += count.loc['1']
-                genders_infos['women'] += count.loc['2']
-            if 'Male' in count:
-                if 'Unknown' in count:
-                    genders_infos['unknown'] += count.loc['Unknown']
-                genders_infos['men'] += count.loc['Male']
-                genders_infos['women'] += count.loc['Female']
+            for key in meaning_gender:
+                if key in count:
+                    genders_infos[meaning_gender[key]] += count.loc[key]
     
-    print(genders_infos)
     if genders_infos['men'] != 0 or genders_infos['women'] != 0:
+        remove_zeros(genders_infos)
         fig, ax = plt.subplots()
         plt.title(data_dir)
         plt.pie(genders_infos.values(), labels=genders_infos.keys(),  autopct='%1.1f%%')
         plt.show()
     else:
         print('Gender data not available in this city:', data_dir[5:])
-    
 
 def data_for_usertype(data_dir):
     
     data_files = os.listdir(data_dir)
-    if 'Philly' in data_dir:
-        usertypes_infos = {
-            'Indego30': 0,
-            'Indego365': 0,
-            'Walk-up': 0,
-            'Day Pass': 0,
-            'IndegoFlex': 0,
-        }
-    elif 'Austin' in data_dir:
-        usertypes_infos = {
-            'Walk Up': 0,
-            'Local365': 0,
-            'Local30': 0,
-            'Local365+Guest Pass': 0,
-            'Republic Rider': 0,
-        }
-    else:
-        usertypes_infos = {
-            'unknown': 0,
-            'customers': 0,
-            'subscribers': 0,
-        }
+    usertypes_infos = {
+        'unknown': 0,
+        'customers': 0,
+        'subscribers': 0,
+        'students': 0,
+        'others': 0
+    }
+    
+    meaning_pass = {
+        'Indego30': 'subscribers',
+        'Indego365': 'subscribers',
+        'Walk-up': 'others',
+        'Day Pass': 'customers',
+        'IndegoFlex': 'subscribers',
+        'Walk Up': 'customers',
+        'Local365': 'subscribers',
+        'Local30': 'subscribers',
+        'Local31': 'subscribers',
+        'Local365+Guest Pass': 'subscribers',
+        'Republic Rider': 'others',
+        'Student Membership': 'students',
+        'U.T. Student Membership': 'students',
+        '3-Day Weekender': 'customers',
+        'Explorer': 'customers',
+        'Pay-as-you-ride': 'customers',
+        'Single Trip (Pay-as-you-ride)': 'customers',
+        'customers': 'customers',
+        'subscribers': 'subscribers',
+        'casual': 'customers',
+        'member': 'subscribers',
+        'Casual': 'customers',
+        'Member': 'subscribers',
+        'unknown': 'unknown'
+    }
 
     for year in data_files:
         # read data from each file into a DataFrame
@@ -286,98 +410,16 @@ def data_for_usertype(data_dir):
         
             df = pd.read_csv(file_path, dtype='object')
             count = df['usertype'].value_counts()
-            if 'unknown' in count:
-                usertypes_infos['unknown'] += count['unknown']
-            if 'Customer' in count:
-                usertypes_infos['customers'] += count['Customer']
-                usertypes_infos['subscribers'] += count['Subscriber']
-            if 'member' in count:
-                usertypes_infos['customers'] += count['casual']
-                usertypes_infos['subscribers'] += count['member']
-            if 'Member' in count:
-                usertypes_infos['customers'] += count['Casual']
-                usertypes_infos['subscribers'] += count['Member']
-            if 'Philly' in file_path:
-                if 'Indego30' in count:
-                    usertypes_infos['Indego30'] += count['Indego30']
-                if 'Indego365' in count:
-                    usertypes_infos['Indego365'] += count['Indego365']
-                if 'Walk-up' in count:
-                    usertypes_infos['Walk-up'] += count['Walk-up']
-                if 'Day Pass' in count:
-                    usertypes_infos['Day Pass'] += count['Day Pass']
-                if 'IndegoFlex' in count:
-                    usertypes_infos['IndegoFlex'] += count['IndegoFlex']
-            if 'Austin' in file_path:
-                if 'Walk Up' in count:
-                    usertypes_infos['Walk Up'] += count['Walk Up']
-                if 'Local365' in count:
-                    usertypes_infos['Local365'] += count['Local365']
-                if 'Local30' in count:
-                    usertypes_infos['Local30'] += count['Local30']
-                if 'Local365+Guest Pass' in count:
-                    usertypes_infos['Local365+Guest Pass'] += count['Local365+Guest Pass']
-                if 'Republic Rider' in count:
-                    usertypes_infos['Republic Rider'] += count['Republic Rider (Annual)']
+            for key in meaning_pass:
+                if key in count:
+                    usertypes_infos[meaning_pass[key]] += count.loc[key]
+    
+    remove_zeros(usertypes_infos)
     
     fig, ax = plt.subplots()
     plt.title(data_dir)
     plt.pie(usertypes_infos.values(), labels=usertypes_infos.keys(),  autopct='%1.1f%%')
     plt.show()
-
-def prepare_data(df, data_dir):
-    '''
-    function to prepare the data by changing the column names
-    '''
-    correct_names = {
-        'usertype': ['Membership or Pass Type', 'passholder_type', 'User Type', 'Member type', 'member_casual'],
-        'bike_type': ['Bike Type', 'rideable_type'],
-        'stop_time': ['Checkout Datetime', 'stoptime', 'ended_at', 'Stop Time and Date', 'stoptime', 'end_time', 'End Date', '01 - Rental Details Local End Time'],
-        'start_time': ['starttime', 'started_at', 'Start Time and Date', 'starttime', 'Start Date', '01 - Rental Details Local Start Time'],
-        'trip_duration_minutes': ['Trip Duration Minutes', 'duration'],
-        'trip_duration_seconds': ['tripduration', 'duration_sec', 'Duration', '01 - Rental Details Duration In Seconds Uncapped'],
-        'gender': ['Gender', 'Member Gender']
-    }
-    
-    for column in correct_names:
-        for name in correct_names[column]:
-            if name in df:
-                df = df.rename(columns={name: column})
-                df.to_csv(data_dir, index=False)
-    
-    for column in correct_names:
-        if column not in df and column != 'trip_duration_seconds' and column != 'trip_duration_minutes':
-            df[column] = ['unknown' for i in range(len(df))]
-            df.to_csv(data_dir, index=False)
-
-def cancel_column(df, data_dir):
-    '''
-    function to cancel column that were added by the function get_missing_data
-    '''
-    if 'gender' in df:
-        df.drop(columns=['gender'], inplace=True)
-        df.to_csv(data_dir, index=False)
-    if 'bike_type' in df:
-        df.drop(columns=['bike_type'], inplace=True)
-        df.to_csv(data_dir, index=False)
-    if 'stop_time' in df:
-        df.drop(columns=['stop_time'], inplace=True)
-        df.to_csv(data_dir, index=False)
-    if 'start_time' in df:
-        df.drop(columns=['start_time'], inplace=True)
-        df.to_csv(data_dir, index=False)
-
-def first_read_data(data_dir_city):
-    for city_file in os.listdir(data_dir_city):
-        data_dir_city_year = os.path.join(data_dir_city, city_file)
-        for year in os.listdir(data_dir_city_year):
-            file_path = os.path.join(data_dir_city_year, year)
-            df = pd.read_csv(file_path, dtype='object')
-            prepare_data(df, file_path)
-            missing_data.append(get_missing_data(df, file_path))
-    
-    print('Missing data:', sum(missing_data) / len(missing_data))
-    missing_data.clear()
 
 if __name__ == '__main__':
     data_dir = 'data'
@@ -388,22 +430,16 @@ if __name__ == '__main__':
         #first_read_data(data_dir_city)
         
         # plot date for each month
-        """ for year in os.listdir(data_dir_city):
+        for year in os.listdir(data_dir_city):
             print('Year:', year)
             data_dir_city_year = os.path.join(data_dir_city, year)
-            data_for_month(data_dir_city_year) """
+            data_for_month(data_dir_city_year)
         
         # plot data for each year
         #data_for_year(data_dir_city)
         
         # plot data for gender
-        data_for_gender(data_dir_city)
+        #data_for_gender(data_dir_city)
         
         # plot data for usertype
         #data_for_usertype(data_dir_city)
-    
-    """ data_dir = 'data/Washington'
-    for file in os.listdir(data_dir):
-        file_path = os.path.join(data_dir, file)
-        df = pd.read_csv(file_path)
-        cancel_column(df, file_path) """
