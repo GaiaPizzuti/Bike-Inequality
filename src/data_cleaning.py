@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import os
 
 def get_missing_data(df, data_dir):
     # Get the number of missing data points per column
@@ -23,8 +25,8 @@ def prepare_data(df, data_dir):
     correct_names = {
         'usertype': ['Membership or Pass Type', 'passholder_type', 'User Type', 'Member type', 'member_casual'],
         'bike_type': ['Bike Type', 'rideable_type'],
-        'stop_time': ['Checkout Datetime', 'stoptime', 'ended_at', 'Stop Time and Date', 'stoptime', 'end_time', 'End Date', '01 - Rental Details Local End Time'],
-        'start_time': ['starttime', 'started_at', 'Start Time and Date', 'starttime', 'Start Date', '01 - Rental Details Local Start Time'],
+        'stop_time': ['Checkout Datetime', 'stoptime', 'ended_at', 'Stop Time and Date', 'stoptime', 'end_time', 'End Date', '01 - Rental Details Local End Time', 'End date'],
+        'start_time': ['starttime', 'started_at', 'Start Time and Date', 'starttime', 'Start Date', '01 - Rental Details Local Start Time', 'Start date'],
         'trip_duration_minutes': ['Trip Duration Minutes', 'duration'],
         'trip_duration_seconds': ['tripduration', 'duration_sec', 'Duration', '01 - Rental Details Duration In Seconds Uncapped'],
         'gender': ['Gender', 'Member Gender']
@@ -69,3 +71,20 @@ def first_read_data(data_dir_city):
     
     print('Missing data:', sum(missing_data) / len(missing_data))
     missing_data.clear()
+
+if __name__ == '__main__':
+    data_dir = 'data/'
+    
+    for city in os.listdir(data_dir):
+        
+        city_path = os.path.join(data_dir, city)
+        
+        for year in os.listdir(city_path):
+            
+            year_path = os.path.join(city_path, year)
+            
+            for file in os.listdir(year_path):
+                
+                file_path = os.path.join(data_dir, city, year, file)
+                df = pd.read_csv(file_path, dtype='object')
+                prepare_data(df, file_path)
