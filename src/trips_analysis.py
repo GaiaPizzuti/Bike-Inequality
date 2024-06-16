@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-data_dir = "data"
+data_dir = "data//bikes"
 
 # ----------------- GENERAL ANALYSIS -----------------
 
