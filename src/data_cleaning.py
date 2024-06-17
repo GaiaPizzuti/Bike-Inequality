@@ -155,6 +155,29 @@ def prepare_gender_data(df, data_dir):
                 df = df.rename(columns={name: column})
                 df.to_csv(data_dir, index=False)
 
+def prepare_race_data(df, data_dir):
+    '''
+    function to prepare the data by changing the column names
+    
+    Inputs:
+        - df: pandas dataframe
+        - data_dir: str, data directory
+    '''
+    correct_names = {
+        'estimate': ['Austin city, Texas!!Estimate', 'Boston city, Massachusetts!!Estimate', 'Chicago city, Illinois!!Estimate',
+                    'Columbus city, Ohio!!Estimate', 'New York city, New York!!Estimate', 'Philadelphia city, Pennsylvania!!Estimate',
+                    'San Francisco city, California!!Estimate', 'Washington city, District of Columbia!!Estimate'],
+        'margin': ['Austin city, Texas!!Margin of Error', 'Boston city, Massachusetts!!Margin of Error', 'Chicago city, Illinois!!Margin of Error',
+                'Columbus city, Ohio!!Margin of Error', 'New York city, New York!!Margin of Error', 'Philadelphia city, Pennsylvania!!Margin of Error',
+                'San Francisco city, California!!Margin of Error', 'Washington city, District of Columbia!!Margin of Error'],
+    }
+    
+    for column in correct_names:
+        for name in correct_names[column]:
+            if name in df:
+                df = df.rename(columns={name: column})
+                df.to_csv(data_dir, index=False)
+
 def cancel_column(df, data_dir):
     '''
     function to cancel column that were added by the function get_missing_data
@@ -199,4 +222,4 @@ if __name__ == '__main__':
                 
                 file_path = os.path.join(data_dir, city, year, file)
                 df = pd.read_csv(file_path, dtype='object')
-                prepare_gender_data(df, file_path)
+                prepare_race_data(df, file_path)
