@@ -43,7 +43,7 @@ def prepare_data(df, data_dir):
             df[column] = ['unknown' for i in range(len(df))]
             df.to_csv(data_dir, index=False)
 
-def prepare_social_data(df, data_dir):
+def prepare_income_data(df, data_dir):
     '''
     fuction to prepare the data by changing the column names
     '''
@@ -81,6 +81,72 @@ def prepare_social_data(df, data_dir):
                             "Chicago city, Illinois!!Nonfamily households!!Margin of Error", "Boston city, Massachusetts!!Nonfamily households!!Margin of Error",
                             "Austin city, Texas!!Nonfamily households!!Margin of Error", "San Francisco city, California!!Nonfamily households!!Margin of Error",
                             "Washington city, District of Columbia!!Nonfamily households!!Margin of Error", "Philadelphia city, Pennsylvania!!Nonfamily households!!Margin of Error"],
+    }
+    
+    for column in correct_names:
+        for name in correct_names[column]:
+            if name in df:
+                df = df.rename(columns={name: column})
+                df.to_csv(data_dir, index=False)
+
+def prepare_gender_data(df, data_dir):
+    '''
+    function to prepare the data by changing the column names
+    
+    Inputs:
+        - df: pandas dataframe
+        - data_dir: str, data directory
+    '''
+    correct_names = {
+        'label': ['Label (Grouping)'],
+        'total_estimates': ['New York city, New York!!Total!!Estimate', 'Austin city, Texas!!Total!!Estimate',
+                            'Chicago city, Illinois!!Total!!Estimate', 'Columbus city, Ohio!!Total!!Estimate',
+                            'Boston city, Massachusetts!!Total!!Estimate', 'Philadelphia city, Pennsylvania!!Total!!Estimate',
+                            'San Francisco city, California!!Total!!Estimate', 'Washington city, District of Columbia!!Total!!Estimate'],
+        'total_margins': ['New York city, New York!!Total!!Margin of Error', 'Austin city, Texas!!Total!!Margin of Error',
+                        'Chicago city, Illinois!!Total!!Margin of Error', 'Columbus city, Ohio!!Total!!Margin of Error',
+                        'Boston city, Massachusetts!!Total!!Margin of Error', 'Philadelphia city, Pennsylvania!!Total!!Margin of Error',
+                        'San Francisco city, California!!Total!!Margin of Error', 'Washington city, District of Columbia!!Total!!Margin of Error'],
+        'total_percent': ['New York city, New York!!Percent!!Estimate', 'Austin city, Texas!!Percent!!Estimate',
+                        'Chicago city, Illinois!!Percent!!Estimate', 'Columbus city, Ohio!!Percent!!Estimate',
+                        'Boston city, Massachusetts!!Percent!!Estimate', 'Philadelphia city, Pennsylvania!!Percent!!Estimate',
+                        'San Francisco city, California!!Percent!!Estimate', 'Washington city, District of Columbia!!Percent!!Estimate'],
+        'total_percent_margins': ['New York city, New York!!Percent!!Margin of Error', 'Austin city, Texas!!Percent!!Margin of Error',
+                                'Chicago city, Illinois!!Percent!!Margin of Error', 'Columbus city, Ohio!!Percent!!Margin of Error',
+                                'Boston city, Massachusetts!!Percent!!Margin of Error', 'Philadelphia city, Pennsylvania!!Percent!!Margin of Error',
+                                'San Francisco city, California!!Percent!!Margin of Error', 'Washington city, District of Columbia!!Percent!!Margin of Error'],
+        'male_estimates': ['New York city, New York!!Male!!Estimate', 'Austin city, Texas!!Male!!Estimate',
+                        'Chicago city, Illinois!!Male!!Estimate', 'Columbus city, Ohio!!Male!!Estimate',
+                        'Boston city, Massachusetts!!Male!!Estimate', 'Philadelphia city, Pennsylvania!!Male!!Estimate',
+                        'San Francisco city, California!!Male!!Estimate', 'Washington city, District of Columbia!!Male!!Estimate'],
+        'male_margins': ['New York city, New York!!Male!!Margin of Error', 'Austin city, Texas!!Male!!Margin of Error',
+                        'Chicago city, Illinois!!Male!!Margin of Error', 'Columbus city, Ohio!!Male!!Margin of Error',
+                        'Boston city, Massachusetts!!Male!!Margin of Error', 'Philadelphia city, Pennsylvania!!Male!!Margin of Error',
+                        'San Francisco city, California!!Male!!Margin of Error', 'Washington city, District of Columbia!!Male!!Margin of Error'],
+        'male_percent': ['New York city, New York!!Percent Male!!Estimate', 'Austin city, Texas!!Percent Male!!Estimate',
+                        'Chicago city, Illinois!!Percent Male!!Estimate', 'Columbus city, Ohio!!Percent Male!!Estimate',
+                        'Boston city, Massachusetts!!Percent Male!!Estimate', 'Philadelphia city, Pennsylvania!!Percent Male!!Estimate',
+                        'San Francisco city, California!!Percent Male!!Estimate', 'Washington city, District of Columbia!!Percent Male!!Estimate'],
+        'male_percent_margins': ['New York city, New York!!Percent Male!!Margin of Error', 'Austin city, Texas!!Percent Male!!Margin of Error',
+                                'Chicago city, Illinois!!Percent Male!!Margin of Error', 'Columbus city, Ohio!!Percent Male!!Margin of Error',
+                                'Boston city, Massachusetts!!Percent Male!!Margin of Error', 'Philadelphia city, Pennsylvania!!Percent Male!!Margin of Error',
+                                'San Francisco city, California!!Percent Male!!Margin of Error', 'Washington city, District of Columbia!!Percent Male!!Margin of Error'],
+        'female_estimates': ['New York city, New York!!Female!!Estimate', 'Austin city, Texas!!Female!!Estimate',
+                            'Chicago city, Illinois!!Female!!Estimate', 'Columbus city, Ohio!!Female!!Estimate',
+                            'Boston city, Massachusetts!!Female!!Estimate', 'Philadelphia city, Pennsylvania!!Female!!Estimate',
+                            'San Francisco city, California!!Female!!Estimate', 'Washington city, District of Columbia!!Female!!Estimate'],
+        'female_margins': ['New York city, New York!!Female!!Margin of Error', 'Austin city, Texas!!Female!!Margin of Error',
+                        'Chicago city, Illinois!!Female!!Margin of Error', 'Columbus city, Ohio!!Female!!Margin of Error',
+                        'Boston city, Massachusetts!!Female!!Margin of Error', 'Philadelphia city, Pennsylvania!!Female!!Margin of Error',
+                        'San Francisco city, California!!Female!!Margin of Error', 'Washington city, District of Columbia!!Female!!Margin of Error'],
+        'female_percent': ['New York city, New York!!Percent Female!!Estimate', 'Austin city, Texas!!Percent Female!!Estimate',
+                        'Chicago city, Illinois!!Percent Female!!Estimate', 'Columbus city, Ohio!!Percent Female!!Estimate',
+                        'Boston city, Massachusetts!!Percent Female!!Estimate', 'Philadelphia city, Pennsylvania!!Percent Female!!Estimate',
+                        'San Francisco city, California!!Percent Female!!Estimate', 'Washington city, District of Columbia!!Percent Female!!Estimate'],
+        'female_percent_margins': ['New York city, New York!!Percent Female!!Margin of Error', 'Austin city, Texas!!Percent Female!!Margin of Error',
+                                'Chicago city, Illinois!!Percent Female!!Margin of Error', 'Columbus city, Ohio!!Percent Female!!Margin of Error',
+                                'Boston city, Massachusetts!!Percent Female!!Margin of Error', 'Philadelphia city, Pennsylvania!!Percent Female!!Margin of Error',
+                                'San Francisco city, California!!Percent Female!!Margin of Error', 'Washington city, District of Columbia!!Percent Female!!Margin of Error']
     }
     
     for column in correct_names:
@@ -133,4 +199,4 @@ if __name__ == '__main__':
                 
                 file_path = os.path.join(data_dir, city, year, file)
                 df = pd.read_csv(file_path, dtype='object')
-                prepare_social_data(df, file_path)
+                prepare_gender_data(df, file_path)

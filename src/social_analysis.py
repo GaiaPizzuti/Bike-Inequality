@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,10 +8,25 @@ import seaborn as sns
 def get_incomes(df, city, year):
     '''
     function to get the incomes from the social data and plot it into a bar charts
+    
+    Inputs:
+        - df: pandas dataframe
+        - city: str, city name
+        - year: str, year
     '''
     
-    estimates = list()
-    margins = list()
+    estimates = {
+        'household': list(),
+        'family': list(),
+        'married': list(),
+        'nonfamily': list()
+    }
+    margins = {
+        'household': list(),
+        'family': list(),
+        'married': list(),
+        'nonfamily': list()
+    }
     
     for i in range(1, 11):
         
@@ -21,24 +37,79 @@ def get_incomes(df, city, year):
             margin = float(df[type + '_margins'][i][1:-1])
             
             # append to the list
-            estimates.append(estimate)
-            margins.append(margin)
+            estimates[type].append(estimate)
+            margins[type].append(margin)
     
     # plot the data
     plt.figure(figsize=(10, 5))
-    for i in range(4):
-        plt.bar(np.arange(10) + i * 0.2, estimates[i * 10: (i + 1) * 10], width=0.2, label=['household', 'family', 'married', 'nonfamily'][i])
-        plt.errorbar(np.arange(10) + i * 0.2, estimates[i * 10: (i + 1) * 10], yerr=margins[i * 10: (i + 1) * 10], fmt='o', color='black', capsize=5)
+    for label, value in estimates.items():
+        plt.bar(np.arange(10) + list(estimates.keys()).index(label) * 0.2, value, width=0.2, label=label)
+        plt.errorbar(np.arange(10) + list(estimates.keys()).index(label) * 0.2, value, yerr=margins[label], fmt='o', color='black', capsize=5)
     plt.xticks(np.arange(10), ['<10k', '10-15k', '15-25k', '25-35k', '35-50k', '50-75k', '75-100k', '100-150k', '150-200k', '>200k'])
     plt.legend()
     plt.title(f'{city} incomes in {year}')
+    plt.ylabel('Percentage of people')
     plt.show()
 
+def get_gender(df, city, year):
+    '''
+    function to get the gender from the social data and plot it into a bar charts
+    
+    Inputs:
+        - df: pandas dataframe
+        - city: str, city name
+        - year: str, year
+    '''
+    
+    estimates = {
+        'total': list(),
+        'male': list(),
+        'female': list()
+    }
+    margins = {
+        'total': list(),
+        'male': list(),
+        'female': list()
+    }
+    
+    for i in range(2, 20):
+        for gender in ['total', 'male', 'female']:
+                
+                # obtain the value from the percentage
+
+                estimate = df[gender + '_estimates'][i]
+                if type(estimate) == float:
+                    estimate = str(estimate)
+                estimate = int(estimate.replace(',', ''))
+                
+                margin = df[gender + '_margins'][i][1:]
+                if type(margin) == float:
+                    margin = str(margin)
+                margin = int(margin.replace(',', ''))
+                
+                # append to the list
+                estimates[gender].append(estimate)
+                margins[gender].append(margin)
+                
+    # plot the data
+    ages = ['<5', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44',
+            '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85+']
+    plt.figure(figsize=(10, 5))
+    for label, value in estimates.items():
+        plt.bar(np.arange(18) + list(estimates.keys()).index(label) * 0.2, value, width=0.2, label=label)
+        plt.errorbar(np.arange(18) + list(estimates.keys()).index(label) * 0.2, value, yerr=margins[label], fmt='o', color='black', capsize=5)
+    plt.xticks(np.arange(18), ages, rotation=45)
+    plt.legend(loc='best')
+    plt.title(f'{city} ages per gender in {year}')
+    plt.ylabel('Number of people')
+    plt.show()
 
 if __name__ == '__main__':
     
     # load date
     data = 'data\\social'
+    
+    function = sys.argv[1]
     
     for city in os.listdir(data):
         print(city)
@@ -59,5 +130,8 @@ if __name__ == '__main__':
                 # read file
                 df = pd.read_csv(file_path)
                 
-                # get incomes
-                get_incomes(df, city, year)
+                if function == 'income' and file == 'income.csv':
+                    # get incomes
+                    get_incomes(df, city, year)
+                elif function == 'gender' and file == 'gender.csv':
+                    get_gender(df, city, year)
