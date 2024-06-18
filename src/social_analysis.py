@@ -51,12 +51,13 @@ def get_incomes(df, city, year):
             estimates[type].append(estimate)
             margins[type].append(margin)
     
+    incomes = ['<10k', '10-15k', '15-25k', '25-35k', '35-50k', '50-75k', '75-100k', '100-150k', '150-200k', '>200k']
     # plot the data
     plt.figure(figsize=(10, 5))
     for label, value in estimates.items():
         plt.bar(np.arange(10) + list(estimates.keys()).index(label) * 0.2, value, width=0.2, label=label)
         plt.errorbar(np.arange(10) + list(estimates.keys()).index(label) * 0.2, value, yerr=margins[label], fmt='o', color='black', capsize=5)
-    plt.xticks(np.arange(10), ['<10k', '10-15k', '15-25k', '25-35k', '35-50k', '50-75k', '75-100k', '100-150k', '150-200k', '>200k'])
+    plt.xticks(np.arange(10), incomes)
     plt.legend()
     plt.title(f'{city} incomes in {year}')
     plt.ylabel('Percentage of people')
@@ -105,14 +106,15 @@ def get_gender(df, city, year):
     # plot the data
     ages = ['<5', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44',
             '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85+']
-    plt.figure(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(10, 5))
     for label, value in estimates.items():
-        plt.bar(np.arange(18) + list(estimates.keys()).index(label) * 0.2, value, width=0.2, label=label)
+        bar = plt.bar(np.arange(18) + list(estimates.keys()).index(label) * 0.2, value, width=0.2, label=label)
         plt.errorbar(np.arange(18) + list(estimates.keys()).index(label) * 0.2, value, yerr=margins[label], fmt='o', color='black', capsize=5)
     plt.xticks(np.arange(18), ages, rotation=45)
     plt.legend(loc='best')
     plt.title(f'{city} ages per gender in {year}')
     plt.ylabel('Number of people')
+    
     plt.show()
 
 def get_race(df, city, year):
@@ -146,15 +148,17 @@ def get_race(df, city, year):
         margins.append(margin)
     
     # plot the data
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(10, 5), layout='constrained')
     
-    plt.barh(labels, estimates, color=get_colors(estimates))
+    barh = plt.barh(labels, estimates, color=get_colors(estimates))
     plt.errorbar(estimates, labels, xerr=margins, fmt='o', color='black', capsize=5)
     plt.xscale('log')
-    plt.yticks(size=8)
-    for index in ax.patches:
-        width = index.get_width() + margins[ax.patches.index(index)]
-        plt.text(width, index.get_y() + index.get_height() / 2, f'{index.get_width()}', ha='left', va='center')
+    ax2 = ax.twinx()
+    ax2.set_ylim(ax.get_ylim())
+    ax2.set_yticks(
+        np.arange(len(estimates)),
+        labels = estimates)
+    ax2.set_ylabel('Number of people')
     plt.title(f'Races in {city} in {year}')
     plt.show()
 
