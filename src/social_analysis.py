@@ -168,6 +168,7 @@ if __name__ == '__main__':
     data = 'data\\social'
     
     function = sys.argv[1]
+    zip_code = sys.argv[2]
     
     for city in os.listdir(data):
         print(city)
@@ -180,18 +181,36 @@ if __name__ == '__main__':
             # load year
             year_path = os.path.join(city_path, year)
             
-            for file in os.listdir(year_path):
+            for zip in os.listdir(year_path):
                 
-                # load file
-                file_path = os.path.join(year_path, file)
+                zip_path = os.path.join(year_path, zip)
                 
-                # read file
-                df = pd.read_csv(file_path)
-                
-                if function == 'income' and file == 'income.csv':
-                    # get incomes
-                    get_incomes(df, city, year)
-                elif function == 'gender' and file == 'gender.csv':
-                    get_gender(df, city, year)
-                elif function == 'race' and file == 'race.csv':
-                    get_race(df, city, year)
+                if not zip_path.endswith('.csv') and zip_code == 'zip':
+
+                    for file in os.listdir(zip_path):
+                        
+                        # load file
+                        file_path = os.path.join(year_path, file)
+                        
+                        # read file
+                        df = pd.read_csv(file_path)
+                        
+                        city_zip = city + ' ' + zip
+                        
+                        if function == 'income' and file == 'income.csv':
+                            # get incomes
+                            get_incomes(df, city_zip, year)
+                        elif function == 'gender' and file == 'gender.csv':
+                            get_gender(df, city_zip, year)
+                        elif function == 'race' and file == 'race.csv':
+                            get_race(df, city_zip, year)
+                elif zip_code == 'city':
+                    df = pd.read_csv(zip_path)
+                    
+                    if function == 'income' and file == 'income.csv':
+                        # get incomes
+                        get_incomes(df, city, year)
+                    elif function == 'gender' and file == 'gender.csv':
+                        get_gender(df, city, year)
+                    elif function == 'race' and file == 'race.csv':
+                        get_race(df, city, year)

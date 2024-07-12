@@ -1,3 +1,5 @@
 # ignore data
 /data/*
 /dataQ/*
+
+*.zip
