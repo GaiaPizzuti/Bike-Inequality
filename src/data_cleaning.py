@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import sys
 
 def get_missing_data(df, data_dir):
     '''
@@ -40,7 +41,13 @@ def prepare_data(df, data_dir):
         'start_time': ['starttime', 'started_at', 'Start Time and Date', 'starttime', 'Start Date', '01 - Rental Details Local Start Time', 'Start date'],
         'trip_duration_minutes': ['Trip Duration Minutes', 'duration'],
         'trip_duration_seconds': ['tripduration', 'duration_sec', 'Duration', '01 - Rental Details Duration In Seconds Uncapped'],
-        'gender': ['Gender', 'Member Gender']
+        'gender': ['Gender', 'Member Gender'],
+        'latitude_start': ['Latitude Start', 'start_lat', 'start station latitude'],
+        'longitude_start': ['Longitude Start', 'start_lng', 'start station longitude', 'start_lon'],
+        'latitude_end': ['Latitude End', 'end_lat', 'end station latitude', 'end_lat'],
+        'longitude_end': ['Longitude End', 'end_lng', 'end station longitude', 'end_lon'],
+        'station_start': ['start_station', 'start station name', '03 - Rental Start Station Name', 'from_station_name', 'start_station_name', 'Checkout Kiosk', 'Start station'],
+        'station_end': ['end_station', 'end station name', '02 - Rental End Station Name', 'to_station_name', 'end_station_name', 'Return Kiosk', 'End station'],
     }
     
     for column in correct_names:
@@ -50,7 +57,7 @@ def prepare_data(df, data_dir):
                 df.to_csv(data_dir, index=False)
     
     for column in correct_names:
-        if column not in df and column != 'trip_duration_seconds' and column != 'trip_duration_minutes':
+        if column not in df and column != 'trip_duration_seconds' and column != 'trip_duration_minutes' and column != 'latitude_start' and column != 'longitude_start' and column != 'latitude_end' and column != 'longitude_end':
             df[column] = ['unknown' for i in range(len(df))]
             df.to_csv(data_dir, index=False)
 
@@ -161,24 +168,43 @@ def first_read_data(data_dir_city):
     missing_data.clear()
 
 if __name__ == '__main__':
-    data_dir = 'data\\social'
+    data_dir = sys.argv[1]
     
-    for city in os.listdir(data_dir):
-        
-        city_path = os.path.join(data_dir, city)
-        
-        for year in os.listdir(city_path):
+    if data_dir.endswith('social'):
+    
+        for city in os.listdir(data_dir):
             
-            year_path = os.path.join(city_path, year)
+            city_path = os.path.join(data_dir, city)
             
-            for zip in os.listdir(year_path):
+            for year in os.listdir(city_path):
                 
-                if not zip.endswith('.csv'):
+                year_path = os.path.join(city_path, year)
                 
-                    zip_path = os.path.join(year_path, zip)
+                for zip in os.listdir(year_path):
                     
-                    for file in os.listdir(zip_path):
+                    if not zip.endswith('.csv'):
+                    
+                        zip_path = os.path.join(year_path, zip)
                         
-                        file_path = os.path.join(zip_path, file)
-                        df = pd.read_csv(file_path, dtype='object')
-                        prepare_zipcode_data(df, file_path)
+                        for file in os.listdir(zip_path):
+                            
+                            file_path = os.path.join(zip_path, file)
+                            df = pd.read_csv(file_path, dtype='object')
+                            prepare_zipcode_data(df, file_path)
+    else:
+        
+        for city in os.listdir(data_dir):
+            
+            city_path = os.path.join(data_dir, city)
+            print('City:', city)
+            
+            for year in os.listdir(city_path):
+                
+                year_path = os.path.join(city_path, year)
+                print('Year:', year)
+                
+                for file in os.listdir(year_path):
+                    
+                    file_path = os.path.join(year_path, file)
+                    df = pd.read_csv(file_path, dtype='object')
+                    prepare_data(df, file_path)

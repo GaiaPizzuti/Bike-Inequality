@@ -6,10 +6,16 @@ import sys
 import os
 import pandas as pd
 from copy import deepcopy
+import matplotlib.lines as mlines
+import numpy as np
 
-debug = True
-categorical = True
+from trips_analysis import get_number_trips
+
+debug = False
+categorical = False
 show = True
+
+data_bikes = 'data\\bikes'
 
 states_filename = "tl_2017_us_state.zip"
 states_url = f"https://www2.census.gov/geo/tiger/TIGER2017/STATE/{states_filename}"
@@ -27,7 +33,40 @@ for data_file, url in zip([states_file, zipcode_file], [states_url, zipcode_url]
 zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
 states_gdf = gpd.read_file(f"zip://{states_file}")
 
-def plot_map(city_name, function, path):
+
+def plot_bikes(city):
+    
+    path = os.path.join(data_bikes, city, year)
+    stations = get_number_trips(path)
+    
+    latitudes = list()
+    longitudes = list()
+    sizes = list()
+    colors = list()
+    
+    for name, station in stations.items():
+        start = station['start']
+        end = station['end']
+        size = max(start, end)
+        sizes.append(size / 1000)
+        if size == start:
+            colors.append('red')
+        else:
+            colors.append('blue')
+
+        latitudes.append(station['lat'])
+        longitudes.append(station['lon'])
+    
+    bikes = pd.DataFrame({
+        'lat': latitudes,
+        'lon': longitudes,
+        'size': sizes,
+        'color': colors
+    })
+    
+    return bikes
+
+def plot_map(city_name, function, path, year):
     
     city = deepcopy(zipcode_gdf)
     
@@ -65,11 +104,13 @@ def plot_map(city_name, function, path):
         
         city = city[city['result'].notna()]
         
+        bikes = plot_bikes(city_name)
+        
         if categorical:
             order = ['<5', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44',
                     '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85+']
             
-            city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, categories = order)
+            base = city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_ancor': (1, 0.5) }, categories = order)
             
             if show:
                 counters = {age: 0 for age in order}
@@ -78,7 +119,7 @@ def plot_map(city_name, function, path):
                 print(counters)
                 
         else:
-            city.plot(column='result', cmap='viridis', legend = True)
+            base = city.plot(column='result', cmap='viridis', legend = True)
             
             if show:
                 counter = 0
@@ -86,13 +127,19 @@ def plot_map(city_name, function, path):
                     counter += age
                 counter /= len(city['result'])
                 print(counter)
-
+        
         plt.xticks([], [])
         plt.yticks([], [])
         plt.title(f'Gender in {city_name} in 2022')
         
+        geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
+        points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+        
     elif function == 'income':
+        
         city = city[city['household'].notna()]
+        
+        bikes = plot_bikes(city_name)
         
         if categorical:
             
@@ -101,7 +148,7 @@ def plot_map(city_name, function, path):
             
             types = ['household', 'married', 'nonfamily', 'family']
             for type in types:
-                city.plot(column=type, cmap='viridis', categorical = True, categories = order, legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1.6, 1)})
+                base = city.plot(column=type, cmap='viridis', categorical = True, categories = order, legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, edgecolor='black')
                 plt.xticks([], [])
                 plt.yticks([], [])
                 plt.title(type + ' income in ' + city_name + ' in 2022')
@@ -111,47 +158,63 @@ def plot_map(city_name, function, path):
                         for income in city[type]:
                             counters[income] += 1
                         print(counters)
+                        
+                geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
+                points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+                
         else:
                 
-                fig, ax = plt.subplots(2, 2, figsize=(7, 7))
+            fig, ax = plt.subplots(2, 2, figsize=(7, 7))
+            
+            types = ['household', 'married', 'nonfamily', 'family']
+            for x in [0, 1]:
+                for y in [0, 1]:
+                    type = types[x + y * 2]
+                    base = city.plot(column=type, cmap='viridis', ax=ax[x, y])
+                    ax[x, y].set_xticks([], [])
+                    ax[x, y].set_yticks([], [])
+                    plt.suptitle('Income in ' + city_name + ' in 2022')
+                    ax[x, y].set_title(type)        
                 
-                types = ['household', 'married', 'nonfamily', 'family']
-                for x in [0, 1]:
-                    for y in [0, 1]:
-                        type = types[x + y * 2]
-                        city.plot(column=type, cmap='viridis', ax=ax[x, y])
-                        ax[x, y].set_xticks([], [])
-                        ax[x, y].set_yticks([], [])
-                        plt.suptitle('Income in ' + city_name + ' in 2022')
-                        ax[x, y].set_title(type)
-                
-                axs = ax.ravel()
-                fig.colorbar(ax[0, 0].collections[0], ax=axs, shrink= 0.5)
-                
-                if show:
-                    counter = {
-                        'household': 0,
-                        'married': 0,
-                        'nonfamily': 0,
-                        'family': 0
-                    }
-                    for type in types:
-                        for income in city[type]:
-                            counter[type] += income
-                        counter[type] /= len(city[type])
-                    print(counter)
+                    geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
+                    geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+                    
+            axs = ax.ravel()
+            fig.colorbar(ax[0, 0].collections[0], ax=axs, shrink= 0.5)
+                    
+            if show:
+                counter = {
+                    'household': 0,
+                    'married': 0,
+                    'nonfamily': 0,
+                    'family': 0
+                }
+                for type in types:
+                    for income in city[type]:
+                        counter[type] += income
+                    counter[type] /= len(city[type])
+                print(counter)
+            
     
-        
     elif function == 'race':
+        
         city = city[city['result'].notna()]
         
         order = ['White', 'Black or \n African American', 'Indian and \n Alaska Native',
             'Asian', 'Native Hawaiian', 'Some Other Race', 'Two or More Races']
         
-        city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, categories = order)
+        base = city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, categories = order)
+        
+        bikes = plot_bikes(city_name)
+        
+        if debug:
+            # insert the zip code on the map
+            for idx, row in city.iterrows():
+                plt.annotate(text=row['ZCTA5CE10'], xy=(row['geometry'].centroid.x, row['geometry'].centroid.y), horizontalalignment='center')
+        
+        plt.title(f'Races in {city_name} in {year}')
         plt.xticks([], [])
         plt.yticks([], [])
-        plt.title(f'Races in {city_name} in 2022')
         
         if debug:
             counter = {race: 0 for race in order}
@@ -159,6 +222,9 @@ def plot_map(city_name, function, path):
                 counter[race] += 1
             print(counter)
         
+        geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
+        points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+    
     plt.show()
 
 def get_gender(df):
@@ -223,6 +289,8 @@ def get_income(df):
                 is_income = True
             if is_income:
                 for type in ['household', 'married', 'nonfamily', 'family']:
+                    if df[type + '_estimates'][i] == '-':
+                        return None, None, None, None
                     estimate = float(df[type + '_estimates'][i][:-1])
                     estimates[type].append(estimate)
             if df['label'][i].endswith('$200,000 or more'):
@@ -284,8 +352,9 @@ if __name__ == '__main__':
     
     function = sys.argv[1]
     city = sys.argv[2]
+    year = sys.argv[3]
     
     city_path = os.path.join(data, city)
         
     year_path = os.path.join(city_path, '2022')
-    plot_map(city, function, year_path)
+    plot_map(city, function, year_path, year)

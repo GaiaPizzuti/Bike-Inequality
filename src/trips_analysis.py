@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
+debug = False
 data_dir = "data//bikes"
 
 # ----------------- GENERAL ANALYSIS -----------------
@@ -278,29 +279,83 @@ def plot_gender_per_hour(city_to_analyse, year_to_analyse, month_to_analyse):
                             
                             compare_gender_per_hour(full_path, month)
 
+# ----------------- STATION ANALYSIS -----------------
+
+def get_number_trips(path):
+    '''
+    function to get the number of trips for each station
+    
+    Inputs:
+        - path: str, the path of the file
+    
+    Outputs:
+        - stations: dict, the stations with the number of trips starting and ending at each station
+    '''
+    stations = dict()
+    
+    for file in os.listdir(path):
+        full_path = os.path.join(path, file)
+        df = pd.read_csv(full_path, dtype=object)
+        
+        for index in range(len(df.index)):
+            
+            if 'latitude_start' in df.columns:
+                start_station = df['station_start'][index]
+                end_station = df['station_end'][index]
+                start_lat = df['latitude_start'][index]
+                start_lon = df['longitude_start'][index]
+                end_lat = df['latitude_end'][index]
+                end_lon = df['longitude_end'][index]
+                
+                if start_station not in stations:
+                    stations[start_station] = {
+                        'lat': start_lat,
+                        'lon': start_lon,
+                        'start' : 1,
+                        'end' : 0
+                    }
+                else:
+                    stations[start_station]['start'] += 1
+                if end_station not in stations:
+                    stations[end_station] = {
+                        'lat': end_lat,
+                        'lon': end_lon,
+                        'start' : 0,
+                        'end' : 1
+                    }
+                else:
+                    stations[end_station]['end'] += 1
+        
+    if debug:
+        for station in stations:
+            print('Station:', station)
+            print('Latitude:', stations[station]['lat'])
+            print('Longitude:', stations[station]['lon'])
+            print('Number of trips starting from this station:', stations[station]['start'])
+            print('Number of trips ending at this station:', stations[station]['end'])
+            print()
+    
+    return stations
+
 # ----------------- MAIN -----------------
 
 if __name__ == '__main__':
     
     function = sys.argv[1]
+    city = sys.argv[2]
+    year = sys.argv[3]
     
-    for city in os.listdir(data_dir):
-        print(city)
-        city_path = os.path.join(data_dir, city)
-            
-        for year in os.listdir(city_path):
-            
-            year_path = os.path.join(city_path, year)
-            
-            if function == 'month':
-                months_data = compare_trip_for_month(year_path)
-                prepare_monthly_data(months, min_months, max_months, months_data)
-            
-            for month_file in os.listdir(year_path):
-                month_path = os.path.join(year_path, month_file)
-                month = int(month_file[4:6]) - 1
-            
-                if function == 'hour':
-                    compare_trip_for_hour(month_path, month)
-                elif function == 'gender':
-                    compare_gender_per_hour(month_path, month)
+    city_path = os.path.join(data_dir, city)
+    year_path = os.path.join(city_path, year)
+    
+    if function == 'hour':
+        path = os.path.join(year_path, sys.argv[4])
+        compare_trip_for_hour(path, month)
+    elif function == 'gender':
+        path = os.path.join(year_path, sys.argv[4])
+        compare_gender_per_hour(path, month)
+    elif function == 'month':
+        compare_trip_for_month(year_path)
+        
+    elif function == 'station':
+        get_number_trips(year_path)
