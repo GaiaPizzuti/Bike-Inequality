@@ -8,11 +8,12 @@ import pandas as pd
 from copy import deepcopy
 import matplotlib.lines as mlines
 import numpy as np
+from shapely.geometry import LineString, Point
 
-from trips_analysis import get_number_trips
+from trips_analysis import get_number_trips, get_size_lines
 
-debug = False
-categorical = False
+debug = True
+categorical = True
 show = True
 
 data_bikes = 'data\\bikes'
@@ -43,10 +44,12 @@ def plot_bikes(city):
     longitudes = list()
     sizes = list()
     colors = list()
+    names = list()
     
     for name, station in stations.items():
         start = station['start']
         end = station['end']
+        
         size = max(start, end)
         sizes.append(size / 1000)
         if size == start:
@@ -56,15 +59,20 @@ def plot_bikes(city):
 
         latitudes.append(station['lat'])
         longitudes.append(station['lon'])
+        names.append(name)
     
     bikes = pd.DataFrame({
+        'name': names,
         'lat': latitudes,
         'lon': longitudes,
         'size': sizes,
         'color': colors
     })
     
-    return bikes
+    # get lines
+    trips = get_size_lines(path)
+    
+    return bikes, trips
 
 def plot_map(city_name, function, path, year):
     
@@ -83,7 +91,6 @@ def plot_map(city_name, function, path, year):
                 file_path = os.path.join(zip_path, file)
                 df = pd.read_csv(file_path)
             
-        
                 if function == 'income' and file == 'income.csv':
                     household, married, nonfamily, family = get_income(df)
                     if household is not None:
@@ -102,15 +109,18 @@ def plot_map(city_name, function, path, year):
     
     if function == 'gender':
         
+        if debug:
+            print("\t Start plotting gender")
+        
         city = city[city['result'].notna()]
         
-        bikes = plot_bikes(city_name)
+        bikes, trips = plot_bikes(city_name)
         
         if categorical:
             order = ['<5', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44',
                     '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85+']
             
-            base = city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_ancor': (1, 0.5) }, categories = order)
+            base = city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, categories = order)
             
             if show:
                 counters = {age: 0 for age in order}
@@ -132,14 +142,26 @@ def plot_map(city_name, function, path, year):
         plt.yticks([], [])
         plt.title(f'Gender in {city_name} in 2022')
         
+        # insert the points on the map
+        
+        if debug:
+            print('-' * 50)
+            print("\t Inserting the points on the map")
+        
         geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
         points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+        
+        geom = list()
+        sizes = list()
+        for start, ends in trips.items():
+            for end, size in ends.items():
+                plt.plot([start.y, end.y], [start.x, end.x], color='black', linewidth=size / 1000)
         
     elif function == 'income':
         
         city = city[city['household'].notna()]
         
-        bikes = plot_bikes(city_name)
+        bikes, trips = plot_bikes(city_name)
         
         if categorical:
             
@@ -162,6 +184,12 @@ def plot_map(city_name, function, path, year):
                 geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
                 points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
                 
+                geom = list()
+                sizes = list()
+                for start, ends in trips.items():
+                    for end, size in ends.items():
+                        plt.plot([start.y, end.y], [start.x, end.x], color='black', linewidth=size / 1000)
+                
         else:
                 
             fig, ax = plt.subplots(2, 2, figsize=(7, 7))
@@ -178,6 +206,12 @@ def plot_map(city_name, function, path, year):
                 
                     geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
                     geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+                    
+                    geom = list()
+                    sizes = list()
+                    for start, ends in trips.items():
+                        for end, size in ends.items():
+                            plt.plot([start.y, end.y], [start.x, end.x], color='black', linewidth=size / 1000)
                     
             axs = ax.ravel()
             fig.colorbar(ax[0, 0].collections[0], ax=axs, shrink= 0.5)
@@ -205,12 +239,7 @@ def plot_map(city_name, function, path, year):
         
         base = city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, categories = order)
         
-        bikes = plot_bikes(city_name)
-        
-        if debug:
-            # insert the zip code on the map
-            for idx, row in city.iterrows():
-                plt.annotate(text=row['ZCTA5CE10'], xy=(row['geometry'].centroid.x, row['geometry'].centroid.y), horizontalalignment='center')
+        bikes, trips = plot_bikes(city_name)
         
         plt.title(f'Races in {city_name} in {year}')
         plt.xticks([], [])
@@ -224,6 +253,12 @@ def plot_map(city_name, function, path, year):
         
         geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
         points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+        
+        geom = list()
+        sizes = list()
+        for start, ends in trips.items():
+            for end, size in ends.items():
+                plt.plot([start.y, end.y], [start.x, end.x], color='black', linewidth=size / 1000)
     
     plt.show()
 

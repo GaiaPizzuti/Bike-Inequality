@@ -4,8 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+from shapely.geometry import LineString, Point
 
-debug = False
+debug = True
 data_dir = "data//bikes"
 
 # ----------------- GENERAL ANALYSIS -----------------
@@ -297,6 +298,11 @@ def get_number_trips(path):
         full_path = os.path.join(path, file)
         df = pd.read_csv(full_path, dtype=object)
         
+        if debug:
+            print('-' * 50)
+            print('File:', file)
+            print('-' * 50)
+        
         for index in range(len(df.index)):
             
             if 'latitude_start' in df.columns:
@@ -308,6 +314,10 @@ def get_number_trips(path):
                 end_lon = df['longitude_end'][index]
                 
                 if start_station not in stations:
+                    
+                    if debug:
+                        print("\t Add new station:", start_station)
+                    
                     stations[start_station] = {
                         'lat': start_lat,
                         'lon': start_lon,
@@ -317,6 +327,10 @@ def get_number_trips(path):
                 else:
                     stations[start_station]['start'] += 1
                 if end_station not in stations:
+                    
+                    if debug:
+                        print("\t Add new station:", end_station)
+                    
                     stations[end_station] = {
                         'lat': end_lat,
                         'lon': end_lon,
@@ -325,16 +339,56 @@ def get_number_trips(path):
                     }
                 else:
                     stations[end_station]['end'] += 1
-        
-    if debug:
-        for station in stations:
-            print('Station:', station)
-            print('Latitude:', stations[station]['lat'])
-            print('Longitude:', stations[station]['lon'])
-            print('Number of trips starting from this station:', stations[station]['start'])
-            print('Number of trips ending at this station:', stations[station]['end'])
-            print()
     
+    if debug:
+        print('-' * 50)
+    
+    return stations
+
+def get_size_lines(path):
+    '''
+    function to get the number of trips for each station
+    
+    Inputs:
+        - path: str, the path of the file
+    
+    Outputs:
+        - stations: dict, the stations with the number of trips starting and ending at each station
+    '''
+    stations = dict()
+    
+    for file in os.listdir(path):
+        full_path = os.path.join(path, file)
+        df = pd.read_csv(full_path, dtype=object)
+        
+        if debug:
+            print('-' * 50)
+            print('File:', file)
+            print('-' * 50)
+        
+        for index in range(len(df.index)):
+            
+            start_lat = df['latitude_start'][index]
+            start_lon = df['longitude_start'][index]
+            end_lat = df['latitude_end'][index]
+            end_lon = df['longitude_end'][index]
+            
+            start_point = Point(float(start_lat), float(start_lon))
+            if start_point not in stations:
+                stations[start_point] = dict()
+                
+                if debug:
+                    print("\t Add new station:", start_point)
+            
+            end_point = Point(float(end_lat), float(end_lon))
+            if end_point not in stations[start_point]:
+                stations[start_point][end_point] = 1
+            else:
+                stations[start_point][end_point] += 1
+    
+    if debug:
+        print('-' * 50)
+        
     return stations
 
 # ----------------- MAIN -----------------
