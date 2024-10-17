@@ -166,45 +166,38 @@ def first_read_data(data_dir_city):
     
     print('Missing data:', sum(missing_data) / len(missing_data))
     missing_data.clear()
+    
+def unify_general_data(full_path):
+    '''
+    function to unify the data for the general data
+    
+    Inputs:
+        - full_path: str, full path of the data
+    '''
+    df = pd.read_csv(full_path, dtype='object')
+            
+    # rename "Label (Grouping)" to "label"
+    if 'Label (Grouping)' in df:
+        df = df.rename(columns={'Label (Grouping)': 'label'})
+        df.to_csv(full_path, index=False)
+    
+    # rename "estimate" to "total_estimates"
+    if 'estimate' in df:
+        df = df.rename(columns={'estimate': 'total_estimates'})
+        df.to_csv(full_path, index=False)
+        
 
 if __name__ == '__main__':
-    data_dir = sys.argv[1]
     
-    if data_dir.endswith('social'):
     
-        for city in os.listdir(data_dir):
-            
-            city_path = os.path.join(data_dir, city)
-            
-            for year in os.listdir(city_path):
-                
-                year_path = os.path.join(city_path, year)
-                
-                for zip in os.listdir(year_path):
-                    
-                    if not zip.endswith('.csv'):
-                    
-                        zip_path = os.path.join(year_path, zip)
-                        
-                        for file in os.listdir(zip_path):
-                            
-                            file_path = os.path.join(zip_path, file)
-                            df = pd.read_csv(file_path, dtype='object')
-                            prepare_zipcode_data(df, file_path)
-    else:
+    path = 'data\\social'
+    for city in os.listdir(path):
+        data_dir_city = os.path.join(path, city)
         
-        for city in os.listdir(data_dir):
+        for year in os.listdir(data_dir_city):
+            data_dir_city_year = os.path.join(data_dir_city, year)
             
-            city_path = os.path.join(data_dir, city)
-            print('City:', city)
-            
-            for year in os.listdir(city_path):
-                
-                year_path = os.path.join(city_path, year)
-                print('Year:', year)
-                
-                for file in os.listdir(year_path):
-                    
-                    file_path = os.path.join(year_path, file)
-                    df = pd.read_csv(file_path, dtype='object')
-                    prepare_data(df, file_path)
+            for location in os.listdir(data_dir_city_year):
+                if location == "race.csv":
+                    full_path = os.path.join(data_dir_city_year, location)
+                    unify_general_data(full_path)

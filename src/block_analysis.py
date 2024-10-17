@@ -10,7 +10,7 @@ import matplotlib.lines as mlines
 import numpy as np
 from shapely.geometry import LineString, Point
 
-from trips_analysis import get_number_trips, get_size_lines
+from trips_analysis import get_number_trips
 
 debug = True
 categorical = True
@@ -69,10 +69,7 @@ def plot_bikes(city):
         'color': colors
     })
     
-    # get lines
-    trips = get_size_lines(path)
-    
-    return bikes, trips
+    return bikes
 
 def plot_map(city_name, function, path, year):
     
@@ -106,16 +103,16 @@ def plot_map(city_name, function, path, year):
                     maximum = get_race(df)
                     if maximum is not None:
                         city.loc[city.ZCTA5CE10.str.startswith(zip), 'result'] = maximum
+
+    bikes = plot_bikes(city_name)
     
     if function == 'gender':
         
-        if debug:
-            print("\t Start plotting gender")
-        
         city = city[city['result'].notna()]
         
-        bikes, trips = plot_bikes(city_name)
-        
+        if debug:
+            print("\t Start plotting gender")
+            
         if categorical:
             order = ['<5', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44',
                     '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', '75-79', '80-84', '85+']
@@ -146,22 +143,17 @@ def plot_map(city_name, function, path, year):
         
         if debug:
             print('-' * 50)
-            print("\t Inserting the points on the map")
+            print("\t Inserting points on the map")
         
         geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
         points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
-        
-        geom = list()
-        sizes = list()
-        for start, ends in trips.items():
-            for end, size in ends.items():
-                plt.plot([start.y, end.y], [start.x, end.x], color='black', linewidth=size / 1000)
         
     elif function == 'income':
         
         city = city[city['household'].notna()]
         
-        bikes, trips = plot_bikes(city_name)
+        if debug:
+            print("\t Start plotting gender")
         
         if categorical:
             
@@ -180,9 +172,17 @@ def plot_map(city_name, function, path, year):
                         for income in city[type]:
                             counters[income] += 1
                         print(counters)
-                        
+                
+                if debug:
+                    print('-' * 50)
+                    print("\t Inserting points on the map")
+                
                 geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
                 points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+                
+                if debug:
+                    print('-' * 50)
+                    print("\t Inserting lines on the map")
                 
                 geom = list()
                 sizes = list()
@@ -202,10 +202,18 @@ def plot_map(city_name, function, path, year):
                     ax[x, y].set_xticks([], [])
                     ax[x, y].set_yticks([], [])
                     plt.suptitle('Income in ' + city_name + ' in 2022')
-                    ax[x, y].set_title(type)        
+                    ax[x, y].set_title(type)      
+                    
+                    if debug:
+                        print('-' * 50)
+                        print("\t Inserting points on the map")
                 
                     geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
                     geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+                    
+                    if debug:
+                        print('-' * 50)
+                        print("\t Inserting lines on the map")
                     
                     geom = list()
                     sizes = list()
@@ -239,7 +247,8 @@ def plot_map(city_name, function, path, year):
         
         base = city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, categories = order)
         
-        bikes, trips = plot_bikes(city_name)
+        if debug:
+            print("\t Start plotting gender")
         
         plt.title(f'Races in {city_name} in {year}')
         plt.xticks([], [])
@@ -251,14 +260,12 @@ def plot_map(city_name, function, path, year):
                 counter[race] += 1
             print(counter)
         
+        if debug:
+            print('-' * 50)
+            print("\t Inserting points on the map")
+        
         geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
         points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
-        
-        geom = list()
-        sizes = list()
-        for start, ends in trips.items():
-            for end, size in ends.items():
-                plt.plot([start.y, end.y], [start.x, end.x], color='black', linewidth=size / 1000)
     
     plt.show()
 
