@@ -14,9 +14,12 @@ import pandas as pd
 import sys
 import os
 
+
 path = 'data\\social'
 csv_path = 'data\\social_mixing.csv'
 complete_csv_path = 'data\\social_mixing_complete.csv'
+
+stations_analysis = True
 
 def sdi(data):
     """
@@ -219,6 +222,8 @@ def get_general_social_mixing_index(path, type):
     elif type == 'race':
         data = get_race_distribution(path)
     
+    print('done' + type)
+    
     
     if type == 'income':
         for key, values in data.items():
@@ -299,6 +304,62 @@ def get_indexes():
                 indexes[key].append(float(data[index + 1]))
     
     return indexes
+
+# ------------------------------------------ bikes indexes -----------------------------------------
+
+def get_stations_zipcodes(city):
+    
+    stations_zipcodes = dict()
+    
+    path = 'data\\stations\\' + city + '.csv'
+    # path example -> 'data\\stations\\Chicago.csv'
+    
+    df = pd.read_csv(path, encoding="ISO-8859-1", dtype={'zipcode': str})
+    
+    for index, row in df.iterrows():
+        station = row['station']
+        zipcode = str(row['zipcode'])
+        
+        if zipcode not in stations_zipcodes:
+            stations_zipcodes[zipcode] = 0
+        
+        stations_zipcodes[zipcode] += 1
+    
+    return stations_zipcodes
+
+def get_bikes_indexes(indexes, city):
+    """
+    Function to get the distribution of social mixing index for each bike station.
+    
+    Input:
+        - indexes: dict with the social mixing index for each zipcode
+    
+    Output:
+        - bikes_indexes: dict indicating the number of stations with a specific social mixing index
+    """
+    
+    bikes_indexes = {
+        'gender': dict(),
+        'household': dict(),
+        'family': dict(),
+        'nonfamily': dict(),
+        'married': dict(),
+        'race': dict()
+    }
+    
+    stations = get_stations_zipcodes(city)
+    
+    
+    for zipcode, station_list in stations.items():
+        if zipcode not in indexes:
+            continue
+        index = indexes[zipcode]
+        for key, value in index.items():
+            if value not in bikes_indexes[key]:
+                bikes_indexes[key][value] = 0
+            bikes_indexes[key][value] += station_list
+    
+    return bikes_indexes
 
 # ------------------------------------------ type indexes ------------------------------------------
 
@@ -465,6 +526,34 @@ def plot_indexes(indexes, type=None):
     plt.ylabel('Density')
     
     plt.show()
+    
+def plot_stations_indexes(bikes_indexes):
+    """
+    Function to plot the distribution of bike stations with a specific social mixing index.
+    
+    Input:
+        - bikes_indexes: dict indicating the number of stations with a specific social mixing index
+    """
+    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    X = np.random.randn(1000, 8)
+    cmap = plt.get_cmap('viridis')
+    colors = cmap([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    
+    # create a subplot for each type of data
+    fig, ax = plt.subplots(2, 3, sharey=True)
+    
+    for index, (key, values) in enumerate(bikes_indexes.items()):
+        ax[index // 3, index % 3].hist(values.keys(), bins=10, histtype='bar', color=colors[index % 8])
+        ax[index // 3, index % 3].set_title(key)
+    
+    fig.suptitle('Bike Stations Social Mixing Index')
+    fig.supxlabel('Social Mixing Index')
+    fig.supylabel('Number of Stations')
+    
+    plt.show()
 
 if __name__ == '__main__':
     
@@ -481,36 +570,50 @@ if __name__ == '__main__':
     print('\tCalculating social mixing index for each location...')
     print('-' * 50)
     
+    zipcodes = dict()
+    
     for location in os.listdir(full_path):
         # check if the location is a directory
         check = os.path.join(full_path, location)
         if not os.path.isdir(check):
             type = location.split('.')[0]
             if type == 'gender':
+                print('-' * 50)
                 print('\tCalculating social mixing index for the general data...')
                 print('-' * 50)
-            get_general_social_mixing_index(check, type)
+            #get_general_social_mixing_index(check, type)
         else:
+            print('\tCalculating social mixing index for the location: ' + location)
             location_path = os.path.join(full_path, location)
             indexes = get_social_mixing_index(location_path)
             create_csv(indexes, location)
+            
+            zipcodes[location] = indexes
+    
+    bikes_indexes = get_bikes_indexes(zipcodes, city)
     
     print('-' * 50)
-    print('\tSocial mixing index calculated and saved in the csv file.')
-    print('-' * 50)
     
-    extract_indexes = get_indexes()
-    final_index = get_mean_index(extract_indexes)
+    plot_stations_indexes(bikes_indexes)
     
-    print_indexes(final_index)
+    if not stations_analysis:
     
-    #plot_indexes(extract_indexes)
-    #plot_multiple_indexes(extract_indexes)
+        print('-' * 50)
+        print('\tSocial mixing index calculated and saved in the csv file.')
+        print('-' * 50)
+        
+        extract_indexes = get_indexes()
+        final_index = get_mean_index(extract_indexes)
     
-    types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']
-    
-    for type in types:
-        full_indexes, types_indexes = analyse_type_indexes(type, year)
-        print_indexes(types_indexes, type)
-        plot_indexes(full_indexes, type)
-        plot_multiple_types_indexes(full_indexes, type)
+        print_indexes(final_index)
+        
+        #plot_indexes(extract_indexes)
+        #plot_multiple_indexes(extract_indexes)
+        
+        types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']
+        
+        for type in types:
+            full_indexes, types_indexes = analyse_type_indexes(type, year)
+            print_indexes(types_indexes, type)
+            plot_indexes(full_indexes, type)
+            plot_multiple_types_indexes(full_indexes, type)

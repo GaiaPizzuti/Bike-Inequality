@@ -386,7 +386,7 @@ def get_race(df):
     races = ['White', 'Black or \n African American', 'Indian and \n Alaska Native',
         'Asian', 'Native Hawaiian', 'Some Other Race', 'Two or More Races']
     return races[estimates.index(max(estimates))]
-        
+
 if __name__ == '__main__':
     
     # load date
