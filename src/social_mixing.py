@@ -15,6 +15,7 @@ import sys
 import os
 
 from util.plots import *
+from util.create_station_file import create_csv
 
 
 path = 'data\\social'
@@ -167,19 +168,6 @@ def get_race_distribution(code):
     
     return races
 
-def get_number_species(data):
-    """
-    Function to get the number of species in a given location.
-    
-    Input:
-        - data: list with the number of people in each species
-    
-    Output:
-        - number_species: int with the number of species in the location
-    """
-    
-    return len(data)
-
 def get_social_mixing_index(path):
     """
     Function to get the social mixing index of a given location.
@@ -248,34 +236,6 @@ def get_mean_index(indexes):
     
     return final_index
 
-
-def create_csv(data, location, path):
-    """
-    Function to create a csv file with the data.
-    
-    Input:
-        - data: list with the data to be saved
-    """
-    
-    # check if the file already exists
-    if not os.path.exists(path):
-        with open(path, 'w') as f:
-            header = 'location,gender,household,family,nonfamily,married,race\n'
-            f.write(header)
-            for item in data.values():
-                line = '' + location + ','
-                for item in data.values():
-                    line += str(item) + ','
-                line = line[:-1] + '\n'
-            f.write(line)
-    else:
-        with open(path, 'a') as f:
-            line = '' + location + ','
-            for item in data.values():
-                line += str(item) + ','
-            line = line[:-1] + '\n'
-            f.write(line)
-
 def get_indexes(path):
     """
     Function to get the social mixing index of a specific location and for each type of data.
@@ -304,169 +264,3 @@ def get_indexes(path):
                 indexes[key].append(float(data[index + 1]))
     
     return indexes
-
-# ------------------------------------------ bikes indexes -----------------------------------------
-
-def get_stations_zipcodes(city):
-    
-    stations_zipcodes = dict()
-    
-    path = 'data\\stations\\' + city + '.csv'
-    # path example -> 'data\\stations\\Chicago.csv'
-    
-    df = pd.read_csv(path, encoding="ISO-8859-1", dtype={'zipcode': str})
-    
-    for index, row in df.iterrows():
-        station = row['station']
-        zipcode = str(row['zipcode'])
-        
-        if zipcode not in stations_zipcodes:
-            stations_zipcodes[zipcode] = 0
-        
-        stations_zipcodes[zipcode] += 1
-    
-    return stations_zipcodes
-
-def get_bikes_indexes(indexes, city, data=None):
-    """
-    Function to get the distribution of social mixing index for each bike station.
-    
-    Input:
-        - indexes: dict with the social mixing index for each zipcode
-    
-    Output:
-        - bikes_indexes: dict indicating the number of stations with a specific social mixing index
-    """
-    
-    bikes_indexes = {
-        'gender': dict(),
-        'household': dict(),
-        'family': dict(),
-        'nonfamily': dict(),
-        'married': dict(),
-        'race': dict()
-    }
-    
-    stations = get_stations_zipcodes(city)
-    
-    for zipcode, count in stations.items():
-        if zipcode not in indexes:
-            continue
-        index = indexes[zipcode]
-        for key, value in index.items():
-            if key not in bikes_indexes:
-                bikes_indexes[key] = dict()
-            if value not in bikes_indexes[key]:
-                bikes_indexes[key][value] = 0
-            bikes_indexes[key][value] += count
-    
-    if data:
-        return bikes_indexes[data]
-    
-    return bikes_indexes
-
-# ------------------------------------------ print indexes ------------------------------------------
-
-def print_indexes(indexes, type=None):
-    """
-    Function to print the social mixing index of a specific location and for each type of data.
-    
-    Input:
-        - indexes: list containing the Social Distancing Index (SDI) for each type
-    """
-    
-    print('-' * 50)
-    if type:
-        print('\tSocial Mixing Index for ' + type)
-    for key, values in indexes.items():
-        print(key, values)
-    print('-' * 50)
-
-# ------------------------------------------ main functions ------------------------------------------
-
-def get_city_data(data, type=None):
-    
-    city_path = os.path.join(path, data)
-    # city_path example -> 'data\\social\\Chicago'
-    
-    full_path = os.path.join(city_path, _year)
-    # full_path example -> 'data\\social\\Chicago\\2022'
-    
-    csv_path = 'data\\indexes\\' + data + '.csv'
-    
-    zipcodes = dict()
-    
-    # remove the file if it already exists
-    if not os.path.exists(csv_path):
-    
-        for location in os.listdir(full_path):
-            # check if the location is a directory
-            check = os.path.join(full_path, location)
-            # check example -> 'data\\social\\Chicago\\2022\\60601'
-            
-            if os.path.isdir(check):
-                location_path = os.path.join(full_path, location)
-                indexes = get_social_mixing_index(location_path)
-                create_csv(indexes, location, csv_path)
-                
-                zipcodes[location] = indexes
-    else:
-        
-        with open(csv_path, 'r') as f:
-            lines = f.readlines()
-            
-            for line in lines:
-                
-                if 'location' in line:
-                    continue
-                
-                datas = line.split(',')
-                indexes = dict()
-                
-                for index, key in enumerate(_types):
-                    indexes[key] = float(datas[index + 1])
-            
-                zipcodes[datas[0]] = indexes
-
-    bikes_indexes = get_bikes_indexes(zipcodes, data, type)
-    return bikes_indexes
-
-def get_type_data(data):
-    
-    full_data = dict()
-    
-    for city in os.listdir(path):
-        
-        if city == "Austin":
-            continue
-        
-        print(f"\tCalculating the indexes for {city}")
-        
-        type_data = get_city_data(city, data)
-        full_data[city] = type_data
-    
-    return full_data
-
-if __name__ == '__main__':
-    
-    data_to_analyse = 'type'
-    data = sys.argv[1]
-    
-    if data_to_analyse == 'city':
-        
-        bikes_data = get_city_data(data)
-        plot_stations_indexes(bikes_data)
-        
-        print('-' * 50)
-        print('\tSocial mixing index calculated and saved in the csv file.')
-        
-        path = 'data\\indexes\\' + data + '.csv'
-        extract_indexes = get_indexes(path)
-        final_index = get_mean_index(extract_indexes)
-    
-        print_indexes(final_index)
-    
-    else:
-        
-        type_data = get_type_data(data)
-        subplot_indexes_per_types(type_data, data)

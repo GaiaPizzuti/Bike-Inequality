@@ -73,6 +73,33 @@ def create_stations(path, city):
                         with open(newfile, 'a') as f:
                             f.write(str(station) + ',' + str(lat) + ',' + str(lon) + ',' + str(zipcode) + '\n')
 
+def create_csv(data, location, path):
+    """
+    Function to create a csv file with the data.
+    
+    Input:
+        - data: list with the data to be saved
+    """
+    
+    # check if the file already exists
+    if not os.path.exists(path):
+        with open(path, 'w') as f:
+            header = 'location,gender,household,family,nonfamily,married,race\n'
+            f.write(header)
+            for item in data.values():
+                line = '' + location + ','
+                for item in data.values():
+                    line += str(item) + ','
+                line = line[:-1] + '\n'
+            f.write(line)
+    else:
+        with open(path, 'a') as f:
+            line = '' + location + ','
+            for item in data.values():
+                line += str(item) + ','
+            line = line[:-1] + '\n'
+            f.write(line)
+
 if __name__ == '__main__':
     
     data_path = 'data\\bikes'
