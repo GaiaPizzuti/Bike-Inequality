@@ -41,10 +41,12 @@ def subplot_indexes_per_types(indexes, type=None):
     colors = cmap([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
     
     fig, ax = plt.subplots(2, 4, sharex=True, sharey=True)
+    
+    fig.delaxes(ax[1, 3])
     # make a hist plot to represent how the data is distributed
     for index, (key, values) in enumerate(indexes.items()):
-        ax[index // 4, index % 4].hist(values, bins=10, histtype='bar', color=colors[index % 8])
-        ax[index // 4, index % 4].set_title(key)
+            ax[index // 4, index % 4].hist(values, bins=20, histtype='bar', color=colors[index % 8])
+            ax[index // 4, index % 4].set_title(key)
     
     # add the title to the plot
     if type:
