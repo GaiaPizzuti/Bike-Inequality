@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
 def plot_indexes_per_types(indexes):
     """
     Function to plot the social mixing index of a specific location and for each type of data.
@@ -5,9 +8,6 @@ def plot_indexes_per_types(indexes):
     Input:
         - indexes: list containing the Social Distancing Index (SDI) for each type
     """
-    
-    import matplotlib.pyplot as plt
-    import numpy as np
     
     X = np.random.randn(1000, 6)
     cmap = plt.get_cmap('viridis')
@@ -33,8 +33,6 @@ def subplot_indexes_per_types(indexes, type=None):
     Args:
         indexes (dict): dictionary with the indexes of a specific type of data from each city
     """
-    import matplotlib.pyplot as plt
-    import numpy as np
     
     X = np.random.randn(1000, 8)
     cmap = plt.get_cmap('viridis')
@@ -67,7 +65,6 @@ def plot_density_indexes(indexes, type=None):
     """
     
     import seaborn as sns
-    import matplotlib.pyplot as plt
     
     sns.displot(indexes, kind='kde')
     
@@ -88,9 +85,6 @@ def plot_stations_indexes(bikes_indexes):
         - bikes_indexes: dict indicating the number of stations with a specific social mixing index
     """
     
-    import matplotlib.pyplot as plt
-    import numpy as np
-    
     X = np.random.randn(1000, 8)
     cmap = plt.get_cmap('viridis')
     colors = cmap([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
@@ -106,4 +100,77 @@ def plot_stations_indexes(bikes_indexes):
     fig.supxlabel('Social Mixing Index')
     fig.supylabel('Number of Stations')
     
+    plt.show()
+
+def plot_stations_differences(differences, city):
+    """
+    Function to plot the differences between the stations' indexes
+
+    Args:
+        differences (list): list of differences between the stations' indexes
+    """
+    
+    X = np.random.randn(1000, 8)
+    cmap = plt.get_cmap('viridis')
+    colors = cmap([0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+    
+    # create a subplot for each type of data
+    fig, ax = plt.subplots(2, 3, sharey=True)
+    
+    for index, (key, values) in enumerate(differences.items()):
+        ax[index // 3, index % 3].hist(values.keys(), bins=20, histtype='bar', color=colors[index % 8])
+        ax[index // 3, index % 3].set_title(key)
+    
+    fig.suptitle('Differences between Trips Indexes in ' + city)
+    fig.supxlabel('Index Difference')
+    fig.supylabel('Number of Trips')
+    
+    
+    plt.show()    
+
+def plot_heatmap(df, city, zipcode):
+    """
+    Function to plot the heatmap of the social mixing index for the city's stations
+    
+    Input:
+        - city: string with the city name
+    """
+    import seaborn as sns
+    
+    colors = sns.color_palette("viridis", as_cmap=True)
+    
+    # get the columns with the indexes
+    indexes = df.columns[2:]
+    
+    # create a heatmap with the indexes
+    annotation = False
+    if zipcode:
+        annotation = True
+    sns.heatmap(df[indexes], cmap=colors, yticklabels=df['station'], annot=annotation, fmt=".2f", linewidths=.5, linecolor='black')
+    plt.suptitle('Social Mixing Index for ' + city)
+    if zipcode:
+        plt.title('Zipcode: ' + df['zipcode'].iloc[0])
+    plt.xlabel('Index Type')
+    plt.ylabel('Station')
+    plt.show()
+
+def plot_zipcode_heatmap(df, city):
+    """
+    Function to plot the heatmap of the social mixing index for the city's stations
+    
+    Input:
+        - city: string with the city name
+    """
+    import seaborn as sns
+    
+    colors = sns.color_palette("viridis", as_cmap=True)
+    
+    # get the columns with the indexes
+    indexes = df.columns[1:]
+    
+    # create a heatmap with the indexes
+    sns.heatmap(df[indexes], cmap=colors, yticklabels=df['zipcode'], annot=False, fmt=".2f", linewidths=.5, linecolor='black')
+    plt.title('Social Mixing Index for ' + city)
+    plt.xlabel('Index Type')
+    plt.ylabel('Station')
     plt.show()

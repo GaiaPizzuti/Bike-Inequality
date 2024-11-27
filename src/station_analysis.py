@@ -1,9 +1,10 @@
 import pandas as pd
 import sys
 import os
+import numpy as np
 
 from util.plots import *
-from social_mixing import get_indexes
+from social_mixing import get_indexes, get_mean_index
 
 path = 'data\\social'
 _year = '2022'
@@ -39,18 +40,24 @@ def get_station_indexes(station, city):
         - city: city name
     """
     
-    station_path = 'data\\stations\\' + city + '.csv'
-    index_path = 'data\\indexes\\' + city + '.csv'
+    station_path = f'data{os.sep}stations{os.sep}{city}.csv'
+    index_path = f'data{os.sep}indexes{os.sep}{city}.csv'
     
     # get the zipcode of the station in the station file
     station_df = pd.read_csv(station_path, encoding='cp1252', dtype={'zipcode': str})
     station_info = station_df[station_df['station'] == station]
-    print(station_info)
+    
+    if station_info.isnull().values.any():
+        return None
+    
     zipcode = station_info['zipcode'].values[0]
     
     # get the indexes of the zipcode in the index file
     index_df = pd.read_csv(index_path, encoding='cp1252', dtype={'location': str})
     index_info = index_df[index_df['location'] == zipcode]
+    
+    if index_info.empty:
+        return None
     
     indexes = dict()
     
@@ -159,7 +166,7 @@ def get_city_data(data, type=None):
                 location_path = os.path.join(full_path, location)
                 
                 # get the social mixing index for the location
-                indexes = get_social_mixing_index(location_path)
+                indexes = get_zipcode_indexes(location)
                 
                 # save the indexes in a csv file
                 create_csv(indexes, location, csv_path)
@@ -202,7 +209,7 @@ def get_type_data(data):
     
     return full_data
 
-def get_station_analysis(data):
+def get_station_analysis(data, data_to_analyse='city'):
     if data_to_analyse == 'city':
     
         bikes_data = get_city_data(data)
