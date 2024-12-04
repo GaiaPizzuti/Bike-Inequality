@@ -1,12 +1,13 @@
 from station_analysis import get_zipcode_indexes, get_station_indexes
-from util.plots import plot_stations_differences, plot_heatmap, plot_zipcode_heatmap
+from util.plots import plot_stations_differences, plot_heatmap, plot_zipcode_heatmap, plot_heatmap_on_map
+from starter import _types
 
 import pandas as pd
 import os
 import sys
 import numpy as np
 
-_types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']
+_upperbound = [18, 10, 10, 10, 10, 9]
 
 def get_difference_stations(departure, arrival, city):
     """
@@ -110,7 +111,16 @@ def get_mean_all_zipcodes(city):
     new_df = pd.DataFrame(indexes)
     return new_df
 
-def get_zipcode_mean(city):
+def get_each_zipcode_mean(city):
+    """
+    Function to get the mean indexes for each zipcode
+
+    Args:
+        city (str): the city name
+
+    Returns:
+        new_df (DataFrame): the DataFrame with the mean indexes for each zipcode
+    """
     
     zipcodes = get_zipcodes(city)
     indexes = list()
@@ -140,10 +150,18 @@ def get_zipcode_mean(city):
         indexes.append(line)
         
     new_df = pd.DataFrame(indexes)
-    print(new_df)
     return new_df
 
 def get_zipcodes(city):
+    """
+    Function to get the zipcodes of a city
+    
+    Args:
+        city (str): the city name
+        
+    Returns:
+        zipcodes (list): list with the zipcodes of the city
+    """
     
     path = f'data\\social\\{city}\\2022'
     zipcodes = []
@@ -153,22 +171,55 @@ def get_zipcodes(city):
     
     return zipcodes
 
+def types_percentage(row):
+    """
+    Function to get the percentage of values for each type
+
+    Args:
+        row (Series): the row with the indexes
+    """
+    
+    # for each type get the corresponding upperbound
+    for type, upperbound in zip(_types, _upperbound):
+        row[type] = row[type] / np.log(upperbound)
+    return row
+
+def get_percentage_values(df):
+    """
+    Function to get the percentage of values for each type
+
+    Args:
+        df (DataFrame): the DataFrame with the indexes
+    """
+    
+    df = df.apply(types_percentage, axis=1)
+    return df
+
 if __name__ == '__main__':
     
     city = sys.argv[1]
     is_zipcode = False
     is_mean = True
-    
-    if len(sys.argv) > 2:
-        zipcode = str(sys.argv[2])
-        is_zipcode = True
+    is_type = True
     
     if not is_mean:
+        
+        if len(sys.argv) > 2:
+            zipcode = str(sys.argv[2])
+            is_zipcode = True
+        
         df = get_mean_zipcode(city, zipcode)
         df = get_mean_all_zipcodes(city)
     
         plot_heatmap(df, city, zipcode=is_zipcode)
     
     else:
-        df = get_zipcode_mean(city)
-        plot_zipcode_heatmap(df, city)
+        df = get_each_zipcode_mean(city)
+        df = get_percentage_values(df)
+        print(df)
+        
+        if is_type:
+            type = sys.argv[2]
+            plot_heatmap_on_map(df, type, city)
+        else:
+            plot_zipcode_heatmap(df, city)

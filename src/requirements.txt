@@ -1,6 +1,7 @@
 matplotlib
 pandas
-fireducks
 shapely
 geopandas
 numpy
+os
+sys

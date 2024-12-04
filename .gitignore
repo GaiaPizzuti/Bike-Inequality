@@ -3,3 +3,6 @@
 /dataQ/*
 
 *.zip
+__pycache__/
+*.pyc
+/utils/__pycache__/

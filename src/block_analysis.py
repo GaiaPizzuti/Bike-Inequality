@@ -1,39 +1,12 @@
-import pathlib
-import urllib.request
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import sys
 import os
 import pandas as pd
 from copy import deepcopy
-import matplotlib.lines as mlines
-import numpy as np
-from shapely.geometry import LineString, Point
 
 from trips_analysis import get_number_trips
-
-debug = True
-categorical = True
-show = True
-
-data_bikes = 'data\\bikes'
-
-states_filename = "tl_2017_us_state.zip"
-states_url = f"https://www2.census.gov/geo/tiger/TIGER2017/STATE/{states_filename}"
-states_file = pathlib.Path(states_filename)
-
-zipcode_filename = "tl_2017_us_zcta510.zip"
-zipcode_url = f"https://www2.census.gov/geo/tiger/TIGER2017/ZCTA5/{zipcode_filename}"
-zipcode_file = pathlib.Path(zipcode_filename)
-
-for data_file, url in zip([states_file, zipcode_file], [states_url, zipcode_url]):
-    if not data_file.is_file():
-        with urllib.request.urlopen(url) as response, open(data_file, 'wb') as f:
-            f.write(response.read())
-
-zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
-states_gdf = gpd.read_file(f"zip://{states_file}")
-
+from starter import zipcode_gdf, states_gdf, debug, categorical, data_bikes, data_social, _incomes
 
 def plot_bikes(city):
     
@@ -119,7 +92,7 @@ def plot_map(city_name, function, path, year):
             
             base = city.plot(column='result', cmap='viridis', legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, categories = order)
             
-            if show:
+            if debug:
                 counters = {age: 0 for age in order}
                 for age in city['result']:
                     counters[age] += 1
@@ -128,7 +101,7 @@ def plot_map(city_name, function, path, year):
         else:
             base = city.plot(column='result', cmap='viridis', legend = True)
             
-            if show:
+            if debug:
                 counter = 0
                 for age in city['result']:
                     counter += age
@@ -160,14 +133,13 @@ def plot_map(city_name, function, path, year):
             order = ['<10,000', '10,000-14,999', '15,000-24,999', '25,000-34,999', '35,000-49,999',
                     '50,000-74,999', '75,000-99,999', '100,000-149,999', '150,000-199,999', '200,000+']
             
-            types = ['household', 'married', 'nonfamily', 'family']
-            for type in types:
+            for type in _incomes:
                 base = city.plot(column=type, cmap='viridis', categorical = True, categories = order, legend=True, legend_kwds={'loc': 'center left', 'bbox_to_anchor': (1, 0.5)}, edgecolor='black')
                 plt.xticks([], [])
                 plt.yticks([], [])
                 plt.title(type + ' income in ' + city_name + ' in 2022')
                 if results:
-                    for type in types:
+                    for type in _incomes:
                         counters = {income: 0 for income in order}
                         for income in city[type]:
                             counters[income] += 1
@@ -194,10 +166,9 @@ def plot_map(city_name, function, path, year):
                 
             fig, ax = plt.subplots(2, 2, figsize=(7, 7))
             
-            types = ['household', 'married', 'nonfamily', 'family']
             for x in [0, 1]:
                 for y in [0, 1]:
-                    type = types[x + y * 2]
+                    type = _incomes[x + y * 2]
                     base = city.plot(column=type, cmap='viridis', ax=ax[x, y])
                     ax[x, y].set_xticks([], [])
                     ax[x, y].set_yticks([], [])
@@ -224,14 +195,14 @@ def plot_map(city_name, function, path, year):
             axs = ax.ravel()
             fig.colorbar(ax[0, 0].collections[0], ax=axs, shrink= 0.5)
                     
-            if show:
+            if debug:
                 counter = {
                     'household': 0,
                     'married': 0,
                     'nonfamily': 0,
                     'family': 0
                 }
-                for type in types:
+                for type in _incomes:
                     for income in city[type]:
                         counter[type] += income
                     counter[type] /= len(city[type])
@@ -389,14 +360,11 @@ def get_race(df):
 
 if __name__ == '__main__':
     
-    # load date
-    data = 'data\\social'
-    
     function = sys.argv[1]
     city = sys.argv[2]
     year = sys.argv[3]
     
-    city_path = os.path.join(data, city)
+    city_path = os.path.join(data_social, city)
         
     year_path = os.path.join(city_path, '2022')
     plot_map(city, function, year_path, year)

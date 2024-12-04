@@ -1,5 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import geopandas as gpd
+import sys
+
+sys.path.append('src')
+from starter import zipcode_file
 
 def plot_indexes_per_types(indexes):
     """
@@ -169,8 +174,38 @@ def plot_zipcode_heatmap(df, city):
     indexes = df.columns[1:]
     
     # create a heatmap with the indexes
-    sns.heatmap(df[indexes], cmap=colors, yticklabels=df['zipcode'], annot=False, fmt=".2f", linewidths=.5, linecolor='black')
+    sns.heatmap(df[indexes], cmap=colors, yticklabels=df['zipcode'], annot=False, fmt=".2f", linewidths=.5, linecolor='black', vmin=0, vmax=1)
     plt.title('Social Mixing Index for ' + city)
     plt.xlabel('Index Type')
-    plt.ylabel('Station')
+    plt.ylabel('Zipcode')
+    plt.show()
+
+def plot_heatmap_on_map(df, type, city):
+    """
+    Function to plot the heatmap of the social mixing index for the city's stations on a map
+
+    Args:
+        df (DataFrame): DataFrame with the indexes percentage (0-1)
+        type (str): the type of index to plot
+        city (str): the city name
+    """
+    
+    zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
+    
+    # df is the DataFrame with the indexes for each zipcode
+    # zipcode_gdf is the GeoDataFrame with the zipcodes
+    
+    # merge the two DataFrames
+    merged = zipcode_gdf.merge(df, left_on='ZCTA5CE10', right_on='zipcode')
+    
+    # create the map
+    fig, ax = plt.subplots(1, 1)
+    
+    # plot the map
+    merged.plot(column=type, ax=ax, legend=True, cmap='viridis', legend_kwds={'label': "Social Mixing Index"})
+    
+    # add the title
+    plt.suptitle(f'Social Mixing Index for {city}')
+    plt.title(f'Index Type: {type}')
+    
     plt.show()

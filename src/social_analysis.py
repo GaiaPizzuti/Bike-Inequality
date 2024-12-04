@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
+from starter import _incomes, data_social
+
 def get_colors(data):
     colors = list()
     for value in data:
@@ -41,7 +43,7 @@ def get_incomes(df, city, year):
     
     for i in range(1, 11):
         
-        for type in ['household', 'family', 'married', 'nonfamily']:
+        for type in _incomes:
             
             # obtain the value from the percentage
             estimate = float(df[type + '_estimates'][i][:-1])
@@ -164,14 +166,11 @@ def get_race(df, city, year):
 
 if __name__ == '__main__':
     
-    # load date
-    data = 'data\\social'
-    
     function = sys.argv[1]
     zip_code = sys.argv[2]
     
-    for city in os.listdir(data):
-        print(city)
+    for city in os.listdir(data_social):
+        print(f"Analysing {city}")
         
         # load city
         city_path = os.path.join(data, city)
