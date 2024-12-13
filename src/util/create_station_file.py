@@ -84,7 +84,7 @@ def create_csv(data, location, path):
     # check if the file already exists
     if not os.path.exists(path):
         with open(path, 'w') as f:
-            header = 'location,gender,household,family,nonfamily,married,race\n'
+            header = 'zipcode,age,household,family,nonfamily,married,race\n'
             f.write(header)
             for item in data.values():
                 line = '' + location + ','
@@ -102,19 +102,9 @@ def create_csv(data, location, path):
 
 if __name__ == '__main__':
     
-    data_path = 'data\\bikes'
+    city = sys.argv[1]
     
-    can_be_created = False
-    for city in os.listdir(data_path):
-
-        if city == 'Chicago':
-            can_be_created = True
-        
-        if can_be_created:
-            print("Creating stations file for city: ", city)
-            city_path = os.path.join(data_path, city)
-            # example city_path = 'data\\bikes\\Chicago'
-            
-            path = os.path.join(city_path, '2022')
-            
-            create_stations(path, city)
+    data_path = f'data\\bikes\\{city}\\2022'
+    print("Creating stations file for city: ", city)
+    
+    create_stations(path, city)

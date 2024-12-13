@@ -5,14 +5,13 @@ import numpy as np
 
 sys.path.append('src')
 from station_analysis import get_zipcode_indexes, get_station_indexes, get_stations_zipcodes
-
-_types  = ['gender', 'household', 'family', 'nonfamily', 'married', 'race']
+from starter import _types, data_bikes, data_stations, data_destinations
 
 def get_mean_indexes_file(city):
     
-    path = f'data\\destinations\\{city}.csv'
-    bike_path = f'data\\bikes\\{city}\\2022'
-    zipcode_path = f'data\\stations\\{city}.csv'
+    path = os.path.join(data_destinations, city) + '.csv'
+    bike_path = os.path.join(data_bikes, city) + '.csv'
+    zipcode_path = os.path.join(data_stations, city) + '.csv'
     zipcode_df = pd.read_csv(zipcode_path, encoding='cp1252', dtype={'zipcode': str})
     
     arrival_averages = dict()

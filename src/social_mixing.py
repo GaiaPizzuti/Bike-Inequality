@@ -20,7 +20,6 @@ from util.create_station_file import create_csv
 
 path = 'data\\social'
 _year = '2022'
-_types = ['gender', 'household', 'family', 'nonfamily', 'married', 'race']
 
 stations_analysis = True
 

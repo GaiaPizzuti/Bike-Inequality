@@ -5,16 +5,17 @@ import numpy as np
 
 from util.plots import *
 from social_mixing import get_indexes, get_mean_index
+from starter import _types, data_indexes, data_stations
+from util.create_station_file import create_csv
 
 path = 'data\\social'
 _year = '2022'
-_types = ['gender', 'household', 'family', 'nonfamily', 'married', 'race']
 
 def get_stations_zipcodes(city):
     
     stations_zipcodes = dict()
     
-    path = 'data\\stations\\' + city + '.csv'
+    path = data_stations + city + '.csv'
     # path example -> 'data\\stations\\Chicago.csv'
     
     df = pd.read_csv(path, encoding="ISO-8859-1", dtype={'zipcode': str})
@@ -40,8 +41,8 @@ def get_station_indexes(station, city):
         - city: city name
     """
     
-    station_path = f'data{os.sep}stations{os.sep}{city}.csv'
-    index_path = f'data{os.sep}indexes{os.sep}{city}.csv'
+    station_path = data_stations + city + '.csv'
+    index_path = data_indexes + city + '.csv'
     
     # get the zipcode of the station in the station file
     station_df = pd.read_csv(station_path, encoding='cp1252', dtype={'zipcode': str})
@@ -73,7 +74,7 @@ def get_zipcode_indexes(zipcode):
     Args:
         zipcode (string): zipcode
     """
-    index_path = 'data\\indexes\\' + city + '.csv'
+    index_path = data_indexes + city + '.csv'
     
     # get the indexes of the zipcode in the index file
     index_df = pd.read_csv(index_path, encoding='cp1252', dtype={'location': str})
@@ -83,6 +84,8 @@ def get_zipcode_indexes(zipcode):
     
     for type in _types:
         indexes[type] = index_info[type].values[0]
+        
+    print(indexes)
     
     return indexes
 
@@ -150,7 +153,7 @@ def get_city_data(data, type=None):
     full_path = os.path.join(city_path, _year)
     # full_path example -> 'data\\social\\Chicago\\2022'
     
-    csv_path = 'data\\indexes\\' + data + '.csv'
+    csv_path = data_indexes + data + '.csv'
     
     zipcodes = dict()
     

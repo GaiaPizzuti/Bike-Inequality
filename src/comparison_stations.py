@@ -1,6 +1,6 @@
 from station_analysis import get_zipcode_indexes, get_station_indexes
 from util.plots import plot_stations_differences, plot_heatmap, plot_zipcode_heatmap, plot_heatmap_on_map
-from starter import _types
+from starter import _types, data_destinations, data_differences, data_social
 
 import pandas as pd
 import os
@@ -54,7 +54,7 @@ def get_difference_zipcodes(departure, arrival, city):
 
 def get_differences(city):
     
-    path = 'data\\differences\\' + city + '.csv'
+    path = os.path.join(data_differences, city) + '.csv'
     
     df = pd.read_csv(path, encoding='cp1252')
     
@@ -81,7 +81,7 @@ def get_mean_zipcode(city, zipcode):
         zipcode (str): the zipcode to get the indexes
     """
     
-    path = 'data\\destinations\\' + city + '.csv'
+    path = os.path.join(data_destinations, city) + '.csv'
     
     df = pd.read_csv(path, encoding='cp1252', dtype={'zipcode': str})
     
@@ -163,7 +163,7 @@ def get_zipcodes(city):
         zipcodes (list): list with the zipcodes of the city
     """
     
-    path = f'data\\social\\{city}\\2022'
+    path = os.path.join(data_social, city, '2022')
     zipcodes = []
     
     for zipcode in os.listdir(path):

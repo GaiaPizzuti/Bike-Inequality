@@ -31,6 +31,18 @@ data_bikes = 'data\\bikes'
 # path to the U.S. social data
 data_social = 'data\\social'
 
+# path to the indexes data
+data_indexes = 'data\\indexes'
+
+# path to the stations data
+data_stations = 'data\\stations'
+
+# path to the destinations data
+data_destinations = 'data\\destinations'
+
+# parth for the difference data
+data_differences = 'data\\differences'
+
 # list of the types of data
 _types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']
 

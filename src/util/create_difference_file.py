@@ -4,9 +4,9 @@ import pandas as pd
 
 sys.path.append('src')
 from station_analysis import get_zipcode_indexes, get_station_indexes
+from starter import _types, data_differences, data_bikes
 
 cities = ['Boston', 'Chicago', 'Columbus', 'NYC', 'Philly', 'SanFrancisco', 'Washington']
-_types  = ['gender', 'household', 'family', 'nonfamily', 'married', 'race']
 
 def get_difference_stations(departure, arrival, city):
     """
@@ -39,12 +39,12 @@ def get_difference_file(city):
         - city: string with the city name
     """
     
-    path = 'data\\differences\\' + city + '.csv'
+    path = os.path.join(data_differences, city) + '.csv'
     
     if os.path.exists(path):
         return
     
-    bike_path = f'data{os.sep}bikes{os.sep}{city}{os.sep}2022'
+    bike_path = os.path.join(data_bikes, city, '2022')
     stations_differences = dict()
     
     for month in os.listdir(bike_path):
