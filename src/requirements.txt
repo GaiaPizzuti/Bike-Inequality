@@ -2,6 +2,7 @@ matplotlib
 pandas
 shapely
 geopandas
-numpy
+numpy==1.26.4
 os
 sys
+esda==2.6.0

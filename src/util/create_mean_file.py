@@ -7,7 +7,7 @@ sys.path.append('src')
 from station_analysis import get_zipcode_indexes, get_station_indexes, get_stations_zipcodes
 from starter import _types, data_bikes, data_stations, data_destinations
 
-def get_mean_indexes_file(city):
+def get_destinations_indexes_file(city):
     
     path = os.path.join(data_destinations, city) + '.csv'
     bike_path = os.path.join(data_bikes, city) + '.csv'
@@ -70,4 +70,4 @@ def get_mean_indexes_file(city):
 if __name__ == '__main__':
     
     city = sys.argv[1]
-    get_mean_indexes_file(city)
+    get_destinations_indexes_file(city)
