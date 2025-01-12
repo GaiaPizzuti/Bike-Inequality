@@ -52,10 +52,28 @@ def get_total_population(code):
     Output:
         - population: int with the total population of the location
     """
-    code = code + '\\gender.csv'
+    code = os.path.join(code, "gender.csv")
     df = pd.read_csv(code)
     
-    return df['total_estimates'][0]
+    # remove the comma from the number
+    if ',' in df['total_estimates'][0]:
+        df['total_estimates'][0] = df['total_estimates'][0].replace(',', '')
+    
+    return float(df['total_estimates'][0])
+
+def get_normalized_index(index, path):
+    """
+    Function to normalize the index of a given location.
+    
+    Input:
+        - index: float with the index of the location
+    
+    Output:
+        - normalized_index: float with the normalized index of the location
+    """
+    
+    total_population = get_total_population(path)
+    return index / total_population
 
 def get_age_distribution(code):
     """

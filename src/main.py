@@ -1,7 +1,7 @@
 from station_analysis import *
 from social_mixing import *
 from comparison_stations import *
-from starter import data_indexes, _types, data_destinations
+from starter import data_indexes, _types, data_destinations, data_normalized
 
 import pandas as pd
 

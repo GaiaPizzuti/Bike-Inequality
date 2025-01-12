@@ -9,7 +9,7 @@ states_file = pathlib.Path(states_filename)
 zipcode_filename = "tl_2017_us_zcta510.zip"
 zipcode_url = f"https://www2.census.gov/geo/tiger/TIGER2017/ZCTA5/{zipcode_filename}"
 zipcode_file = pathlib.Path(zipcode_filename)
-
+zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
 
 
 # boolean to enable/disable debug mode -> print results
@@ -19,28 +19,28 @@ debug = False
 categorical = False
 
 # path to the trips data
-data_bikes = 'data\\bikes'
+data_bikes = 'data/bikes'
 
 # path to the U.S. social data
-data_social = 'data\\social'
+data_social = 'data/social'
 
 # path to the indexes data
-data_indexes = 'data\\indexes'
+data_indexes = 'data/indexes'
 
 # path to the stations data
-data_stations = 'data\\stations'
+data_stations = 'data/stations'
 
 # path to the destinations data
-data_destinations = 'data\\destinations'
+data_destinations = 'data/destinations'
 
 # path for the difference data
-data_differences = 'data\\differences'
+data_differences = 'data/differences'
 
 # path for the normalized data
-data_normalized = 'data\\normalized'
+data_normalized = 'data/normalized'
 
 # path for the OpenStreetMap data
-data_osm = 'data\\osm'
+data_osm = 'data/osm'
 
 # list of the types of data
 _types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']

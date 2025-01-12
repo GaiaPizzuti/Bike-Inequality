@@ -6,7 +6,7 @@ import pandas as pd
 from copy import deepcopy
 
 from trips_analysis import get_number_trips
-from starter import zipcode_gdf, states_gdf, debug, categorical, data_bikes, data_social, _incomes
+from starter import zipcode_file, debug, categorical, data_bikes, data_social, _incomes
 
 def plot_bikes(city):
     
@@ -46,6 +46,7 @@ def plot_bikes(city):
 
 def plot_map(city_name, function, path, year):
     
+    zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
     city = deepcopy(zipcode_gdf)
     
     results = list()

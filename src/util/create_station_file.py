@@ -7,7 +7,7 @@ import sys
 sys.path.append('src')
 
 # load the zipcode data
-from block_analysis import zipcode_gdf
+from starter import zipcode_file
 
 def get_station_zipcode(point):
     '''
@@ -20,6 +20,7 @@ def get_station_zipcode(point):
         - zipcode: zipcode of the station
     '''
     
+    zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
     for index, row in zipcode_gdf.iterrows():
         if row['geometry'].contains(point):
             return row.ZCTA5CE10

@@ -221,7 +221,7 @@ def get_station_analysis(data, data_to_analyse='city'):
         print('-' * 50)
         print('\tSocial mixing index calculated and saved in the csv file.')
         
-        path = 'data\\indexes\\' + data + '.csv'
+        path = 'data/indexes/' + data + '.csv'
         extract_indexes = get_indexes(path)
         final_index = get_mean_index(extract_indexes)
 
