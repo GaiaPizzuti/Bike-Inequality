@@ -42,6 +42,9 @@ data_normalized = 'data/normalized'
 # path for the OpenStreetMap data
 data_osm = 'data/osm'
 
+# path for the normalized destinations data
+data_normalized_destinations = 'data/normalized_destinations'
+
 # list of the types of data
 _types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']
 

@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 sys.path.append('src')
-from station_analysis import get_zipcode_indexes, get_station_indexes, get_stations_zipcodes
+from station_analysis import get_station_indexes
 from starter import _types, data_bikes, data_stations, data_destinations
 
 def get_destinations_indexes_file(city):
@@ -28,7 +28,7 @@ def get_destinations_indexes_file(city):
         
         print('Processing month: ', month)
         
-        for index, row in df.iterrows():
+        for _, row in df.iterrows():
             
             departure = row['station_start']
             arrival = row['station_end']

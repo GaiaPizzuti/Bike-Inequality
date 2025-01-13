@@ -9,6 +9,8 @@ is_zipcode = False
 is_mean = True
 is_type = True
 
+is_normalized = True
+
 # UPPERBOUNDS
 # age: 18 classes -> ln(18) = 2.89
 # income: 10 classes -> ln(10) = 2.30
@@ -28,14 +30,26 @@ def get_destination_map():
         plot_zipcode_heatmap(df, city)
     return zipcodes
 
+def get_map(data):
+    """
+    Function to plot the map of the indexes of each zipcode based on the normalized values
+    """
+    path = os.path.join(data, city) + '.csv'
+    df = pd.read_csv(path, encoding='cp1252', dtype={'zipcode': str})
+    
+    return df
+
 def get_index_map(zipcodes):
     """
     Function to plot the map of the indexes of each zipcode
     """
     
-    path = os.path.join(data_indexes, city) + '.csv'
+    if is_normalized:
+        df = get_map(data_normalized)
+    else:
+        df = get_map(data_indexes)
+
     path_destination = os.path.join(data_destinations, city) + '.csv'
-    df = pd.read_csv(path, encoding='cp1252', dtype={'zipcode': str})
     df_destination = pd.read_csv(path_destination, encoding='cp1252', dtype={'zipcode': str})
     
     # get only the zipcodes that are in the destination map
