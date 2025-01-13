@@ -8,23 +8,55 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import seaborn as sns
+from copy import deepcopy
 
 sys.path.append('src')
-from starter import zipcode_file, data_destinations, data_indexes, data_osm
+from starter import zipcode_file, data_indexes, data_osm
 
-def scc(city):
+# read only the zipcodes in the index dataframe
+zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
+
+osm_types = {
+    'building': ['building'],
+    'commercial': ['shop', 'tourism', 'office'],
+    'emergency': ['emergency'],
+    'government': ['government', 'military'],
+    'healthcare': ['healthcare'],
+    'landuse': ['landuse'],
+    'natural': ['natural'],
+    'power': ['power', 'backup_generator'],
+    'public': ['historic'],
+    'sport': ['sport'],
+    'transportation': ['aeroway', 'highway', 'railway', 'waterway'],
+}
+
+amenities = {
+    'commercial': ['marketplace', 'restaurant', 'fast_food', 'cafe', 'bar', 'pub'],
+    'education': ['kindergarten', 'school', 'college', 'university', 'language_school'],
+    'emergency': ['police', 'fire_station'],
+    'financial': ['atm', 'bank', 'bureau_de_change', 'microfinance', 'mobile_money_agent', 'money_transfer'],
+    'governement': ['court_house', 'townhall', 'embassy', 'post_office'],
+    'healthcare': ['doctors', 'dentist', 'clinic', 'toilets', 'hospital', 'pharmacy'],
+    'power': ['fuel'],
+    'public': ['place_of_worship', 'community_centre', 'library', 'toilets'],
+    'transportation': ['ferry_terminal', 'bus_station']
+}
+
+leisures = {
+    'sport': ['stadium', 'swimming pool', 'pitch', 'sport_centre'],
+    'landuse': ['park'],
+}
+
+def scc(city, type = None):
+
+    # read only the zipcodes in the index dataframe
+    zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
     
     print('reading the indexes data')
     path_indexes = os.path.join(data_indexes, city + '.csv')
     df_index = pd.read_csv(path_indexes, encoding='cp1252', dtype={'zipcode': str})
     
-    print('reading the zipcodes data')
-    # read only the zipcodes in the index dataframe
-    zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
-
-    print('reading the POIs data')
-    path_osm = os.path.join(data_osm, city + '.geojson')
-    df_osm = gpd.read_file(path_osm).to_crs(zipcode_gdf.crs)
+    df_osm = get_pois(city, type)
 
     print('adding the zipcodes to the dataframe')
 
@@ -87,6 +119,41 @@ def scc(city):
     plt.title("Correlation Between POI Density and Mixing Index for " + city)
     plt.show()
 
+def get_pois(city, type = None):
+    """
+    Function to get the category of the POIs in the city
+    """
+    print('reading the zipcodes data')
 
-city = 'NYC'
-scc(city)
+    print('reading the POIs data')
+    path_osm = os.path.join(data_osm, city + '.geojson')
+    df_osm = gpd.read_file(path_osm).to_crs(zipcode_gdf.crs)
+
+    # filter the POIs by type and the leisure dictionary
+    new_df = deepcopy(df_osm)
+
+    # clear the dataframe
+    new_df.drop(new_df.index, inplace=True)
+    if type:
+        if type in osm_types:
+            for key in osm_types[type]:
+                df = df_osm.loc[df_osm[key].notnull()]
+                new_df = pd.concat([new_df, df])
+        
+        if type in amenities:
+            for key in amenities[type]:
+                df = df_osm.loc[df_osm['amenity'] == key]
+                new_df = pd.concat([new_df, df])
+        
+        if type in leisures:
+            for key in leisures[type]:
+                df = df_osm.loc[df_osm['leisure'] == key]
+                new_df = pd.concat([new_df, df])
+
+        return new_df
+    
+    return df_osm
+
+city = 'Washington'
+for type in ['building', 'commercial', 'education', 'public', 'healthcare', 'transportation']:
+    scc(city, type)
