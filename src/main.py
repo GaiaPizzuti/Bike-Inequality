@@ -1,20 +1,20 @@
 from station_analysis import *
 from social_mixing import *
 from comparison_stations import *
-from starter import data_indexes, _types, data_destinations, data_normalized
-
+from starter import data_indexes, data_destinations, data_normalized_destinations, _types
 import pandas as pd
+import numpy as np
 
 is_zipcode = False
 is_mean = True
 is_type = True
 
-is_normalized = True
-
 # UPPERBOUNDS
 # age: 18 classes -> ln(18) = 2.89
 # income: 10 classes -> ln(10) = 2.30
 # race: 9 classes -> ln(9) = 2.20
+
+_upperbound = [2.89, 2.30, 2.30, 2.30, 2.30, 2.20]
 
 def get_destination_map():
     """
@@ -30,7 +30,7 @@ def get_destination_map():
         plot_zipcode_heatmap(df, city)
     return zipcodes
 
-def get_map(data):
+def get_data(data):
     """
     Function to plot the map of the indexes of each zipcode based on the normalized values
     """
@@ -39,20 +39,16 @@ def get_map(data):
     
     return df
 
-def get_index_map(zipcodes):
+def get_index_map():
     """
     Function to plot the map of the indexes of each zipcode
     """
     
-    if is_normalized:
-        df = get_map(data_normalized)
-    else:
-        df = get_map(data_indexes)
-
-    path_destination = os.path.join(data_destinations, city) + '.csv'
-    df_destination = pd.read_csv(path_destination, encoding='cp1252', dtype={'zipcode': str})
+    df = get_data(data_indexes)
+    df_destination = get_data(data_destinations)
     
     # get only the zipcodes that are in the destination map
+    zipcodes = get_zipcodes(data_destinations)
     df = df[df['zipcode'].isin(zipcodes)]
     
     print(f'Mean of {type} for the city of {city}:\t', df[type].mean())
@@ -72,7 +68,44 @@ def get_index_map(zipcodes):
     df = get_percentage_values(df)
     plot_heatmap_on_map(df, type, city)
 
+def get_zipcodes(data):
+    """
+    Function to get the zipcodes of the city in the destination map
+    """
+
+    df = get_data(data)
+    return df['zipcode'].unique()
+
+def get_normalized_data(type):
+    """
+    Function to plot the map of the indexes of each zipcode based on the normalized values
+
+    Args:
+        type (str): the type of index to plot
+    """
+    df = get_data(data_normalized_destinations)
+
+    # standardize the values
+    mean = np.mean(df[type])
+    std = np.std(df[type])
+
+    print(f'Mean of {type} for the city of {city}:\t', mean)
+    print(f"Standard deviation of {type} for the city of {city}:\t", std)
+
+    print(df.head())
+
+    df[type] = (df[type] - mean) / std
+
+    print(df.head())
+    plot_heatmap_on_map(df, type, city)
+
 city = sys.argv[1]
-type = sys.argv[2]
-zipcodes = get_destination_map()
-get_index_map(zipcodes)
+#type = sys.argv[2]
+
+for type in _types:
+    get_normalized_data(type)
+    print('-' * 50)
+
+# index / upperbound
+# (index / total_population) / (upperbound / total_population)
+# index / upperbound

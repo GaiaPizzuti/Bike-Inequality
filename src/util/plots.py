@@ -202,7 +202,7 @@ def plot_heatmap_on_map(df, type, city):
     fig, ax = plt.subplots(1, 1)
     
     # plot the map
-    merged.plot(column=type, ax=ax, legend=True, cmap='viridis', legend_kwds={'label': "Social Mixing Index"}, vmin=0, vmax=1)
+    merged.plot(column=type, ax=ax, legend=True, cmap='viridis', legend_kwds={'label': "Social Mixing Index"})
     
     # add the title
     plt.suptitle(f'Social Mixing Index for {city}')
