@@ -1,5 +1,5 @@
 from station_analysis import get_zipcode_indexes, get_station_indexes
-from util.plots import plot_stations_differences, plot_heatmap, plot_zipcode_heatmap, plot_heatmap_on_map
+from util.plots import plot_heatmap, plot_zipcode_heatmap, plot_heatmap_on_map
 from starter import _types, data_destinations, data_differences, data_social
 
 import pandas as pd

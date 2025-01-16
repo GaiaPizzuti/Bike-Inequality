@@ -11,7 +11,7 @@ import seaborn as sns
 from copy import deepcopy
 
 sys.path.append('src')
-from starter import zipcode_file, data_indexes, data_osm
+from starter import zipcode_file, data_indexes, data_osm, data_destinations
 
 # read only the zipcodes in the index dataframe
 zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
@@ -53,8 +53,21 @@ def scc(city, type = None):
     zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
     
     print('reading the indexes data')
-    path_indexes = os.path.join(data_indexes, city + '.csv')
+    path = os.path.join(data_indexes, city + '.csv')
+    df = pd.read_csv(path, encoding='cp1252', dtype={'zipcode': str})
+
+    path_indexes = os.path.join(data_destinations, city + '.csv')
     df_index = pd.read_csv(path_indexes, encoding='cp1252', dtype={'zipcode': str})
+
+    # get only the zipcodes that are in the index map
+    zicodes = df["zipcode"].unique()
+    df_index =  df_index[df_index["zipcode"].isin(zicodes)]
+
+    # remove station column
+    df_index = df_index.drop(columns=["station"])
+
+    # in the DataFrame there are multiple lines for the same zipcode, so we need to group them
+    df_index = df_index.groupby("zipcode").mean().reset_index()
     
     df_osm = get_pois(city, type)
 
@@ -154,6 +167,6 @@ def get_pois(city, type = None):
     
     return df_osm
 
-city = 'Washington'
+city = sys.argv[1]
 for type in ['building', 'commercial', 'education', 'public', 'healthcare', 'transportation']:
     scc(city, type)

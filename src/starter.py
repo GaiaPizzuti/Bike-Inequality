@@ -45,6 +45,9 @@ data_osm = 'data/osm'
 # path for the normalized destinations data
 data_normalized_destinations = 'data/normalized_destinations'
 
+# path for the number of trips data
+data_trips = 'data/trips'
+
 # list of the types of data
 _types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']
 
