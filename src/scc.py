@@ -1,14 +1,15 @@
 import esda
 import pandas as pd
 import geopandas as gpd
-import libpysal as lps
 import numpy as np
-from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import sys
 import os
 import seaborn as sns
 from copy import deepcopy
+from scipy.spatial.distance import cdist
+from scipy import stats
+from math import log as ln
 
 sys.path.append('src')
 from starter import zipcode_file, data_indexes, data_osm, data_destinations
@@ -89,11 +90,14 @@ def scc(city, type = None):
 
     zipcode_gdf = zipcode_gdf.merge(df_index, on="zipcode", how="left")
     zipcode_gdf = zipcode_gdf.merge(poi_counts, on="zipcode", how="left")
-    zipcode_gdf["poi_count"].fillna(0, inplace=True)  # Fill ZIP codes with no POIs
+    zipcode_gdf["poi_count"] = zipcode_gdf["poi_count"].fillna(0)  # Fill ZIP codes with no POIs
 
     print('calculating the density of POIs')
 
-    zipcode_gdf["poi_density"] = zipcode_gdf["poi_count"] / zipcode_gdf["geometry"].area
+    zipcode_gdf.to_crs(epsg=3857, inplace=True)
+    area_zip = zipcode_gdf["geometry"].area
+    print("area", area_zip)
+    zipcode_gdf["poi_density"] = zipcode_gdf["poi_count"] / area_zip
 
     print('plotting the data')
 
@@ -102,35 +106,79 @@ def scc(city, type = None):
     
     # select only zipcodes in the index dataframe
     zipcode_gdf = zipcode_gdf[zipcode_gdf["zipcode"].isin(df_index["zipcode"])]
+    # normalization poi_density
 
-    print('calculating the Moran\'s I')
-
-    weights = lps.weights.Queen.from_dataframe(zipcode_gdf)
-
-    y = zipcode_gdf["race"]
-    x = zipcode_gdf["poi_density"]
-
-    moran = esda.Moran(x, weights)
-    print(f"Moran's I: {moran.I}, p-value: {moran.p_sim}")
+    max_density = zipcode_gdf["poi_density"].max()
+    zipcode_gdf["poi_density"] = zipcode_gdf["poi_density"] / max_density
 
     # plot the data
-    fig, axes = plt.subplots(1, 2, figsize=(15, 7))
+    _, axes = plt.subplots(1, 2, figsize=(15, 7))
 
-    zipcode_gdf.plot(column="poi_density", ax=axes[0], legend=True, cmap="plasma")
+    zipcode_gdf.plot(column="poi_density", ax=axes[0], legend=True, cmap="plasma", vmin=0, vmax=1)
     axes[0].set_title("POI Density")
 
-    print(zipcode_gdf.poi_density)
-
-    zipcode_gdf.plot(column="race", ax=axes[1], legend=True, cmap="viridis")
-    axes[1].set_title("Mixing Index")
+    min_race = zipcode_gdf["race"].min()
+    zipcode_gdf.plot(column="race", ax=axes[1], legend=True, cmap="viridis", vmin=min_race, vmax=ln(9))
+    axes[1].set_title("Normalized mixing Index")
     
     plt.suptitle(city)
 
     plt.show()
 
-    sns.scatterplot(data=zipcode_gdf, x="poi_density", y="race")
-    plt.title("Correlation Between POI Density and Mixing Index for " + city)
+    df1 = zipcode_gdf.copy()
+    df2 = zipcode_gdf.copy()
+
+    coords_df1 = list(df1.geometry.apply(compute_centroid))
+    coords_df2 = list(df2.geometry.apply(compute_centroid))
+    dist_matrix = cdist(coords_df1, coords_df2)
+
+    r_spatial,r_p = [],[]
+    results = pd.DataFrame(columns=['Distance', 'Spatial Pearson', 'Regular Pearson'])
+    vals = np.arange(500, 7000, 1)
+    for D in vals:
+        #D = 2000
+        # consider using weights decaying exponentially with distance
+        weights_matrix = np.where(dist_matrix <= D, 1, 0)
+
+        v1 = np.array(df1.poi_density)
+        v2 = np.array(df2.race)
+        
+        # standardize the variables
+        v1 = (v1 - v1.mean()) / v1.std()
+        v2 = (v2 - v2.mean()) / v2.std()
+
+        # reshape the variables
+        v1 = v1.reshape(-1, 1)
+        v2 = v2.reshape(-1, 1)
+        
+        pearson = Compute_SPearson(weights_matrix, v1, v2)
+        r, p = stats.pearsonr(v1.flatten(), v2.flatten())
+
+        if D % 250 == 0:
+            print(f"Distance: {D} m")
+            print('spatial pearson correlation: ', pearson)
+
+            print("Regular Pearson Correlation:", r, "p-value:", p)
+            print("\n")
+
+        r_spatial.append(pearson)
+        r_p.append(r)
+
+    results['Distance'] = vals
+    results['Spatial Pearson'] = r_spatial
+    results['Regular Pearson'] = r_p
+
+    sns.lineplot(data=results, x='Distance', y='Spatial Pearson', label='Spatial Pearson Correlation')
+    sns.lineplot(data=results, x='Distance', y='Regular Pearson', label='Regular Pearson Correlation')
+    plt.legend()
+    plt.xticks(np.arange(500, 7000, 250), rotation=45)
+    plt.suptitle('Spatial Pearson Correlation vs Regular Pearson Correlation for ' + city)
+    plt.xlabel("Distance (m)")
+    plt.ylabel("Spatial Pearson Correlation")
+    plt.xlabel("Distance (m)")
+    plt.ylabel("Regular Pearson Correlation")
     plt.show()
+
 
 def get_pois(city, type = None):
     """
@@ -167,6 +215,24 @@ def get_pois(city, type = None):
     
     return df_osm
 
+def compute_centroid(geom):
+    if geom.geom_type == 'Polygon':
+        x = np.mean(geom.exterior.coords.xy[0])
+        y = np.mean(geom.exterior.coords.xy[1])
+    else:
+        x = geom.centroid.x
+        y = geom.centroid.y
+    return (x, y)
+
+def Compute_SPearson(weights_matrix, v1, v2):
+    r = esda.Spatial_Pearson(connectivity = weights_matrix)
+    r.fit(v1,v2)
+    A = r.association_[0][1]
+    del(r)
+    return A
+
+
 city = sys.argv[1]
-for type in ['building', 'commercial', 'education', 'public', 'healthcare', 'transportation']:
-    scc(city, type)
+scc(city)
+#for type in ['building', 'commercial', 'education', 'public', 'healthcare', 'transportation']:
+    #scc(city, type)
