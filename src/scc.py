@@ -11,7 +11,6 @@ from scipy.spatial.distance import cdist
 from scipy import stats
 from math import log as ln
 
-sys.path.append('src')
 from starter import zipcode_file, data_indexes, data_osm, data_destinations
 
 # read only the zipcodes in the index dataframe
@@ -123,6 +122,19 @@ def scc(city, type = None):
     
     plt.suptitle(city)
 
+    plt.show()
+
+    # plot the scatter plot for poi density (x) and indexes (y)
+    plt.figure(figsize=(10, 5))
+    sns.scatterplot(data=zipcode_gdf, x="poi_density", y="family", alpha=0.5, label="Family")
+    sns.scatterplot(data=zipcode_gdf, x="poi_density", y="nonfamily", alpha=0.5, label="Non Family")
+    sns.scatterplot(data=zipcode_gdf, x="poi_density", y="married", alpha=0.5, label="Married")
+    sns.scatterplot(data=zipcode_gdf, x="poi_density", y="household", alpha=0.5, label="Household")
+    sns.scatterplot(data=zipcode_gdf, x="poi_density", y="race", alpha=0.5, label="Race")
+    plt.title("POI Density vs Indexes")
+    plt.xlabel("POI Density")
+    plt.ylabel("Indexes")
+    plt.legend()
     plt.show()
 
     df1 = zipcode_gdf.copy()

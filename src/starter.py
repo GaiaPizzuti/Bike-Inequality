@@ -1,13 +1,7 @@
 import pathlib
-import urllib.request
 import geopandas as gpd
 
-states_filename = "tl_2017_us_state.zip"
-states_url = f"https://www2.census.gov/geo/tiger/TIGER2017/STATE/{states_filename}"
-states_file = pathlib.Path(states_filename)
-
 zipcode_filename = "tl_2017_us_zcta510.zip"
-zipcode_url = f"https://www2.census.gov/geo/tiger/TIGER2017/ZCTA5/{zipcode_filename}"
 zipcode_file = pathlib.Path(zipcode_filename)
 zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
 
@@ -47,9 +41,3 @@ data_normalized_destinations = 'data/normalized_destinations'
 
 # path for the number of trips data
 data_trips = 'data/trips'
-
-# list of the types of data
-_types = ['age', 'household', 'family', 'nonfamily', 'married', 'race']
-
-# list of the incomes types
-_incomes = ['household', 'married', 'nonfamily', 'family']
