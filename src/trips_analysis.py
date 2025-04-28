@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-from shapely.geometry import LineString, Point
 
 debug = True
 data_dir = "data//bikes"

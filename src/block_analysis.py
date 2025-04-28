@@ -6,7 +6,9 @@ import pandas as pd
 from copy import deepcopy
 
 from trips_analysis import get_number_trips
-from starter import zipcode_file, debug, categorical, data_bikes, data_social, _incomes
+from starter import zipcode_file, debug, categorical, data_bikes, data_social
+
+_incomes = ['household', 'family', 'married', 'nonfamily']
 
 def plot_bikes(city):
     
@@ -120,7 +122,7 @@ def plot_map(city_name, function, path, year):
             print("\t Inserting points on the map")
         
         geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
-        points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+        geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
         
     elif function == 'income':
         
@@ -151,17 +153,11 @@ def plot_map(city_name, function, path, year):
                     print("\t Inserting points on the map")
                 
                 geopuffer = gpd.GeoDataFrame(bikes, geometry = gpd.points_from_xy(bikes.lon, bikes.lat))
-                points = geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
+                geopuffer.plot(ax=base, color=geopuffer['color'], markersize=geopuffer['size'], legend=True)
                 
                 if debug:
                     print('-' * 50)
                     print("\t Inserting lines on the map")
-                
-                geom = list()
-                sizes = list()
-                for start, ends in trips.items():
-                    for end, size in ends.items():
-                        plt.plot([start.y, end.y], [start.x, end.x], color='black', linewidth=size / 1000)
                 
         else:
                 
