@@ -3,19 +3,25 @@ import sys
 import pandas as pd
 
 sys.path.append("src")
-from starter import data_bikes, data_trips, data_stations
+from starter import data_bikes, data_trips, data_stations, data_filtered_trips
 from create_station_file import get_station_zipcode
 
 city = sys.argv[1]
 
-def create_trips_file(city):
+# check if there is a second argument
+filtered = False
+if len(sys.argv) > 2:
+    if sys.argv[2] == 'filtered':
+        filtered = True
+
+def create_trips_file(city, filtered):
     """
     Function to create a file in which each row has a initial zipcode and a final zipcode and the number of trips
     starting from the initial zipcode and ending in the final zipcode
     """
 
-    social_path = os.path.join(data_bikes, city, '2022')
-    files = os.listdir(social_path)
+    bikes_data = os.path.join(data_bikes, city, '2022')
+    files = os.listdir(bikes_data)
 
     df_station = pd.read_csv(os.path.join(data_stations, city) + '.csv', encoding='cp1252', dtype={'zipcode': str})
 
@@ -23,7 +29,7 @@ def create_trips_file(city):
 
     for file in files:
         print(file)
-        path = os.path.join(social_path, file)
+        path = os.path.join(bikes_data, file)
         df = pd.read_csv(path, encoding='cp1252', dtype={'zipcode': str})
         
         for _, row in df.iterrows():
@@ -35,6 +41,10 @@ def create_trips_file(city):
             if departure.empty or arrival.empty:
                 continue
 
+            if filtered:
+                if row.usertype == 'casual' or row.usertype == 'Day Pass' or row.usertype == 'Customer':
+                    continue
+            
             departure = departure.values[0]
             arrival = arrival.values[0]
 
@@ -44,14 +54,20 @@ def create_trips_file(city):
             if arrival not in stats[departure]:
                 stats[departure][arrival] = 0
 
+            # increment the number of trips from departure to arrival
             stats[departure][arrival] += 1
     
-    with open(os.path.join(data_trips, city) + '.csv', 'w') as f:
+    if filtered:
+        output_file = data_filtered_trips
+    else:
+        output_file = data_trips
+    
+    with open(os.path.join(output_file, city) + '.csv', 'w') as f:
         f.write('departure,arrival,trips\n')
         for departure in stats:
             for arrival in stats[departure]:
                 f.write(f'{departure},{arrival},{stats[departure][arrival]}\n')
-
+    
 def get_ratio(city):
     """
     Function that takes the trip DataFrame of the city and calculates for each zipcode the ratio between the number
@@ -75,6 +91,8 @@ def get_ratio(city):
         total = df[df['departure'] == departure]['trips'].sum()
 
         # calculate the ratio
+        # thus the ratio represent the number of trips that ends in a destination
+        # divided by the total number of trips that start in that zipcode
         df.loc[(df['departure'] == departure) & (df['arrival'] == arrival), 'ratio'] = trips / total
     
     # remove nan values
@@ -83,5 +101,5 @@ def get_ratio(city):
     # insert the new column in the DataFrame
     df.to_csv(os.path.join(data_trips, city) + '.csv', index=False)
 
-#create_trips_file(city)
+create_trips_file(city, filtered)
 get_ratio(city)

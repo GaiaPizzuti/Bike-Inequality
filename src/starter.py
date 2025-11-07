@@ -5,6 +5,8 @@ zipcode_filename = "tl_2017_us_zcta510.zip"
 zipcode_file = pathlib.Path(zipcode_filename)
 zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
 
+_types = ['age','household','family','nonfamily','married','race']
+
 
 # boolean to enable/disable debug mode -> print results
 debug = False
@@ -41,3 +43,9 @@ data_normalized_destinations = 'data/normalized_destinations'
 
 # path for the number of trips data
 data_trips = 'data/trips'
+
+# path for the number of filtered trips data
+data_filtered_trips = 'data/filtered_trips'
+
+# path for the filtered destinations data
+data_filtered_destinations = 'data/filtered_destinations'

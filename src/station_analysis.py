@@ -41,8 +41,8 @@ def get_station_indexes(station, city):
         - city: city name
     """
     
-    station_path = data_stations + city + '.csv'
-    index_path = data_indexes + city + '.csv'
+    station_path = os.path.join(data_stations, city + '.csv')
+    index_path = os.path.join(data_indexes, city + '.csv')
     
     # get the zipcode of the station in the station file
     station_df = pd.read_csv(station_path, encoding='cp1252', dtype={'zipcode': str})
@@ -54,8 +54,8 @@ def get_station_indexes(station, city):
     zipcode = station_info['zipcode'].values[0]
     
     # get the indexes of the zipcode in the index file
-    index_df = pd.read_csv(index_path, encoding='cp1252', dtype={'location': str})
-    index_info = index_df[index_df['location'] == zipcode]
+    index_df = pd.read_csv(index_path, encoding='cp1252', dtype={'zipcode': str})
+    index_info = index_df[index_df['zipcode'] == zipcode]
     
     if index_info.empty:
         return None
