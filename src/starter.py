@@ -5,8 +5,6 @@ zipcode_filename = "tl_2017_us_zcta510.zip"
 zipcode_file = pathlib.Path(zipcode_filename)
 zipcode_gdf = gpd.read_file(f"zip://{zipcode_file}")
 
-_types = ['age','household','family','nonfamily','married','race']
-
 
 # boolean to enable/disable debug mode -> print results
 debug = False

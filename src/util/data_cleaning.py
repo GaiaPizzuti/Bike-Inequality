@@ -1,40 +1,9 @@
 import numpy as np
 import pandas as pd
 import os
-import sys
+from starter import data_social
 
-def get_missing_data(df, data_dir):
-    '''
-    function to get the missing data in the dataframe
-    
-    Inputs:
-        - df: pandas dataframe
-        - data_dir: str, data directory
-    '''
-    # Get the number of missing data points per column
-    missing_values_count = df.isnull().sum()
-
-    # How many total missing values do we have?
-    total_cells = np.prod(df.shape)
-    total_missing = missing_values_count.sum()
-    
-    if total_missing != 0:
-        print('Missing data:', missing_values_count)
-
-    # Percent of data that is missing
-    percent_missing = (total_missing/total_cells) * 100
-
-    return percent_missing
-
-def prepare_data(df, data_dir):
-    '''
-    function to prepare the data by changing the column names
-    
-    Inputs:
-        - df: pandas dataframe
-        - data_dir: str, data directory
-    '''
-    correct_names = {
+standard_names = {
         'usertype': ['Membership or Pass Type', 'passholder_type', 'User Type', 'Member type', 'member_casual'],
         'bike_type': ['Bike Type', 'rideable_type'],
         'stop_time': ['Checkout Datetime', 'stoptime', 'ended_at', 'Stop Time and Date', 'stoptime', 'end_time', 'End Date', '01 - Rental Details Local End Time', 'End date'],
@@ -49,15 +18,48 @@ def prepare_data(df, data_dir):
         'station_start': ['start_station', 'start station name', '03 - Rental Start Station Name', 'from_station_name', 'start_station_name', 'Checkout Kiosk', 'Start station'],
         'station_end': ['end_station', 'end station name', '02 - Rental End Station Name', 'to_station_name', 'end_station_name', 'Return Kiosk', 'End station'],
     }
+
+def get_missing_data(df):
+    '''
+    function to get the percentage of missing data in the dataframe
     
-    for column in correct_names:
-        for name in correct_names[column]:
+    Inputs:
+        - df: pandas dataframe
+        - data_dir: str, data directory
+    '''
+    # get the number of missing values per column
+    missing_values_count = df.isnull().sum()
+    # get the total number of cells in the dataframe that are missing
+    total_cells = np.prod(df.shape)
+    total_missing = missing_values_count.sum()
+    
+    if total_missing != 0:
+        print('Missing data:', missing_values_count)
+    # Percent of data that is missing
+    percent_missing = (total_missing/total_cells) * 100
+
+    return percent_missing
+
+def prepare_data(df, data_dir):
+    '''
+    function to prepare the data by changing the column names
+    
+    Inputs:
+        - df: pandas dataframe
+        - data_dir: str, data directory
+    '''
+    
+    for column in standard_names:
+        for name in standard_names[column]:
             if name in df:
                 df = df.rename(columns={name: column})
                 df.to_csv(data_dir, index=False)
     
-    for column in correct_names:
-        if column not in df and column != 'trip_duration_seconds' and column != 'trip_duration_minutes' and column != 'latitude_start' and column != 'longitude_start' and column != 'latitude_end' and column != 'longitude_end':
+    uncorrect_names = ['trip_duration_seconds', 'trip_duration_minutes', 'latitude_start',
+                       'longitude_start', 'latitude_end', 'longitude_end']
+    
+    for column in standard_names:
+        if column not in df and column not in uncorrect_names:
             df[column] = ['unknown' for i in range(len(df))]
             df.to_csv(data_dir, index=False)
 
@@ -149,7 +151,7 @@ def cancel_column(df, data_dir):
         df.drop(columns=['start_time'], inplace=True)
         df.to_csv(data_dir, index=False)
 
-def first_read_data(data_dir_city):
+def first_read_data(data_dir_city, missing_data):
     '''
     function to read the data for the first time and prepare it for the analysis
     
@@ -189,10 +191,8 @@ def unify_general_data(full_path):
 
 if __name__ == '__main__':
     
-    
-    path = 'data\\social'
-    for city in os.listdir(path):
-        data_dir_city = os.path.join(path, city)
+    for city in os.listdir(data_social):
+        data_dir_city = os.path.join(data_social, city)
         
         for year in os.listdir(data_dir_city):
             data_dir_city_year = os.path.join(data_dir_city, year)
