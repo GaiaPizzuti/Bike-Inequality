@@ -7,11 +7,12 @@ from starter import data_bikes, data_trips, data_stations, data_filtered_trips
 from create_station_file import get_station_zipcode
 
 city = sys.argv[1]
+year = sys.argv[2]
 
 # check if there is a second argument
 filtered = False
-if len(sys.argv) > 2:
-    if sys.argv[2] == 'filtered':
+if len(sys.argv) > 3:
+    if sys.argv[3] == 'filtered':
         filtered = True
 
 def create_trips_file(city, filtered):
@@ -20,7 +21,7 @@ def create_trips_file(city, filtered):
     starting from the initial zipcode and ending in the final zipcode
     """
 
-    bikes_data = os.path.join(data_bikes, city, '2022')
+    bikes_data = os.path.join(data_bikes, city, year)
     files = os.listdir(bikes_data)
 
     df_station = pd.read_csv(os.path.join(data_stations, city) + '.csv', encoding='cp1252', dtype={'zipcode': str})
@@ -62,6 +63,8 @@ def create_trips_file(city, filtered):
     else:
         output_file = data_trips
     
+    output_file = os.path.join(output_file, year)
+    
     with open(os.path.join(output_file, city) + '.csv', 'w') as f:
         f.write('departure,arrival,trips\n')
         for departure in stats:
@@ -77,7 +80,7 @@ def get_ratio(city):
         city: str -> the city to analyze
     """
     
-    df = pd.read_csv(os.path.join(data_trips, city) + '.csv', encoding='cp1252', dtype={'departure': str, 'arrival': str})
+    df = pd.read_csv(os.path.join(data_trips, year, city) + '.csv', encoding='cp1252', dtype={'departure': str, 'arrival': str})
     
     # get the list of zipcodes
     zipcodes = df['departure'].unique()
@@ -99,7 +102,7 @@ def get_ratio(city):
     df = df.dropna()
     
     # insert the new column in the DataFrame
-    df.to_csv(os.path.join(data_trips, city) + '.csv', index=False)
+    df.to_csv(os.path.join(data_trips, year, city) + '.csv', index=False)
 
 create_trips_file(city, filtered)
 get_ratio(city)

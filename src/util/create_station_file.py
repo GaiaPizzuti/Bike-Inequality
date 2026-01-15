@@ -5,9 +5,7 @@ import geopandas as gpd
 import sys
 
 sys.path.append('src')
-
-# load the zipcode data
-from starter import zipcode_file
+from starter import zipcode_file, data_stations, data_bikes
 
 def get_station_zipcode(point):
     '''
@@ -37,7 +35,7 @@ def create_stations(path, city):
     
     stations = []
     
-    newfile = 'data\\stations\\' + city + '.csv'
+    newfile = os.path.join(data_stations, year, city + '.csv')
     
     # check if the file already exists
     if os.path.exists(newfile):
@@ -104,8 +102,9 @@ def create_csv(data, location, path):
 if __name__ == '__main__':
     
     city = sys.argv[1]
+    year = sys.argv[2]
     
-    data_path = f'data\\bikes\\{city}\\2022'
+    data_path = os.path.join(data_bikes, city, year)
     print("Creating stations file for city: ", city)
     
-    create_stations(path, city)
+    create_stations(data_path, city)
