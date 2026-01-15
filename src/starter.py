@@ -47,3 +47,9 @@ data_filtered_trips = 'data/filtered_trips'
 
 # path for the filtered destinations data
 data_filtered_destinations = 'data/filtered_destinations'
+
+# path for the self loops data
+data_self_loops = 'data/self_loops'
+
+# path for the filtered self loops data
+data_filtered_self_loops = 'data/filtered_self_loops'

@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 sys.path.append('src')
-from station_analysis import get_zipcode_indexes, get_station_indexes
+from station_analysis import get_station_indexes
 from starter import _types, data_differences, data_bikes
 
 cities = ['Boston', 'Chicago', 'Columbus', 'NYC', 'Philly', 'SanFrancisco', 'Washington']
@@ -100,7 +100,4 @@ def get_difference_file(city):
 if __name__ == '__main__':
     
     city = sys.argv[1]
-    
     get_difference_file(city)
-    
-    #plot_stations_indexes(differences, city)

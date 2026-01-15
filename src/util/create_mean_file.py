@@ -49,7 +49,6 @@ def get_destinations_indexes_file(city, filtered=False):
     stations_indexes = dict()
     
     for month in os.listdir(bike_path):
-        print(month)
     
         file = os.path.join(bike_path, month)
         df = pd.read_csv(file)
