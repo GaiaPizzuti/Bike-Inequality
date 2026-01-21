@@ -4,7 +4,6 @@ import pandas as pd
 
 sys.path.append("src")
 from starter import data_bikes, data_trips, data_stations, data_filtered_trips
-from create_station_file import get_station_zipcode
 
 city = sys.argv[1]
 year = sys.argv[2]
@@ -15,6 +14,8 @@ if len(sys.argv) > 3:
     if sys.argv[3] == 'filtered':
         filtered = True
 
+spring = True
+
 def create_trips_file(city, filtered):
     """
     Function to create a file in which each row has a initial zipcode and a final zipcode and the number of trips
@@ -24,11 +25,14 @@ def create_trips_file(city, filtered):
     bikes_data = os.path.join(data_bikes, city, year)
     files = os.listdir(bikes_data)
 
-    df_station = pd.read_csv(os.path.join(data_stations, city) + '.csv', encoding='cp1252', dtype={'zipcode': str})
+    df_station = pd.read_csv(os.path.join(data_stations, year, city) + '.csv', encoding='cp1252', dtype={'zipcode': str})
 
     stats = {}
 
     for file in files:
+        if spring and file[4:6] not in ['04', '05', '06']:
+            continue
+
         print(file)
         path = os.path.join(bikes_data, file)
         df = pd.read_csv(path, encoding='cp1252', dtype={'zipcode': str})
@@ -58,7 +62,9 @@ def create_trips_file(city, filtered):
             # increment the number of trips from departure to arrival
             stats[departure][arrival] += 1
     
-    if filtered:
+    if spring:
+        output_file = os.path.join(data_trips, 'spring')
+    elif filtered:
         output_file = data_filtered_trips
     else:
         output_file = data_trips
@@ -81,9 +87,6 @@ def get_ratio(city):
     """
     
     df = pd.read_csv(os.path.join(data_trips, year, city) + '.csv', encoding='cp1252', dtype={'departure': str, 'arrival': str})
-    
-    # get the list of zipcodes
-    zipcodes = df['departure'].unique()
 
     for _, row in df.iterrows():
         departure = row['departure']

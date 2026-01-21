@@ -5,9 +5,11 @@ import numpy as np
 
 sys.path.append('src')
 from station_analysis import get_station_indexes
-from starter import _types, data_bikes, data_stations, data_destinations, data_trips, data_filtered_trips, data_filtered_destinations
+from starter import data_bikes, data_stations, data_destinations, data_trips, data_filtered_trips, data_filtered_destinations
 
 year = 2022
+_types = ['age','household','family','nonfamily','married','race']
+spring = True
 
 def get_specific_trips(trips_df, departure_zipcode, arrival_zipcode):
     '''
@@ -27,33 +29,28 @@ def get_specific_trips(trips_df, departure_zipcode, arrival_zipcode):
     else:
         return 0
 
-def get_destinations_indexes_file(city, filtered=False):
-    
-    if filtered:
-        path = os.path.join(data_filtered_destinations, city) + '.csv'
-    else:
-        path = os.path.join(data_destinations, city) + '.csv'
+def get_destinations_indexes_file(city, year, path, trips_path):
     
     bike_path = os.path.join(data_bikes, city) + f'/{year}'
 
-    if filtered:
-        trips_path = os.path.join(data_filtered_trips, city) + '.csv'
-    else:
-        trips_path = os.path.join(data_trips, city) + '.csv'
     trips_df = pd.read_csv(trips_path, dtype={'arrival': str, 'departure': str})
     
-    zipcode_path = os.path.join(data_stations, city) + '.csv'
+    zipcode_path = os.path.join(data_stations, year, city) + '.csv'
     zipcode_df = pd.read_csv(zipcode_path, encoding='cp1252', dtype={'zipcode': str})
     
     arrival_averages = dict()
     stations_indexes = dict()
     
+    # iterate over each month file in the bike data
     for month in os.listdir(bike_path):
     
+        if spring and month[4:6] not in ['04', '05', '06']:
+            print('Skipping month: ', month)
+            continue
+        
         file = os.path.join(bike_path, month)
         df = pd.read_csv(file)
         df = df.dropna()
-        
         print('Processing month: ', month)
         
         for _, row in df.iterrows():
@@ -70,7 +67,7 @@ def get_destinations_indexes_file(city, filtered=False):
             # if the departure station is not in the stations indexes dict, get the indexes
             if departure not in stations_indexes:
                 # save the indexes from the departure station for future analysis
-                indexes = get_station_indexes(departure, city)
+                indexes = get_station_indexes(departure, year, city)
                 stations_indexes[departure] = indexes
             else:
                 indexes = stations_indexes[departure]
@@ -83,6 +80,10 @@ def get_destinations_indexes_file(city, filtered=False):
                 
                 if departure not in arrival_averages[arrival][type]:
                     arrival_averages[arrival][type][departure] = indexes[type]
+
+
+    # create the output folder if it does not exist
+    os.makedirs(os.path.dirname(path), exist_ok=True)
 
     with open(path, 'w') as f:
         f.write('station,zipcode,gender,household,family,nonfamily,married,race\n')
@@ -132,9 +133,23 @@ def get_destinations_indexes_file(city, filtered=False):
 if __name__ == '__main__':
     
     city = sys.argv[1]
-
-    # check if there is another argument: filtered
-    if len(sys.argv) > 2 and sys.argv[2] == 'filtered':
-        get_destinations_indexes_file(city, filtered=True)
+    year = sys.argv[2]
+    if len(sys.argv) > 3 and sys.argv[3] == 'filtered':
+        filtered = True
     else:
-        get_destinations_indexes_file(city)
+        filtered = False
+
+    if filtered:
+        output_city_path = data_filtered_destinations
+        trips_city_path = data_filtered_trips
+    else:
+        output_city_path = data_destinations
+        trips_city_path = data_trips
+
+    if spring:
+        output_city_path = os.path.join(output_city_path, 'spring')
+        trips_city_path = os.path.join(trips_city_path, 'spring')
+    output_path = os.path.join(output_city_path, year, city) + '.csv'
+    trips_path = os.path.join(trips_city_path, year, city) + '.csv'
+
+    get_destinations_indexes_file(city, year, output_path, trips_path)

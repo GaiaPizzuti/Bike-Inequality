@@ -5,11 +5,12 @@ import numpy as np
 
 from util.plots import *
 from social_mixing import get_indexes, get_mean_index
-from starter import _types, data_indexes, data_stations
+from starter import data_indexes, data_stations
 from util.create_station_file import create_csv
 
 path = 'data\\social'
 _year = '2022'
+types = ['age','household','family','nonfamily','married','race']
 
 def get_stations_zipcodes(city):
     
@@ -31,7 +32,7 @@ def get_stations_zipcodes(city):
     
     return stations_zipcodes
 
-def get_station_indexes(station, city):
+def get_station_indexes(station, year, city):
     """
     Function to get the indexes of each station in a city. Each station has a zipcode and each zipcode has an index for each type.
     The function will return a dictionary with the indexes of each type.
@@ -41,7 +42,7 @@ def get_station_indexes(station, city):
         - city: city name
     """
     
-    station_path = os.path.join(data_stations, city + '.csv')
+    station_path = os.path.join(data_stations, year, city + '.csv')
     index_path = os.path.join(data_indexes, city + '.csv')
     
     # get the zipcode of the station in the station file
@@ -62,7 +63,7 @@ def get_station_indexes(station, city):
     
     indexes = dict()
     
-    for type in _types:
+    for type in types:
         indexes[type] = index_info[type].values[0]
     
     return indexes
@@ -82,7 +83,7 @@ def get_zipcode_indexes(zipcode):
     
     indexes = dict()
     
-    for type in _types:
+    for type in types:
         indexes[type] = index_info[type].values[0]
         
     print(indexes)
@@ -188,7 +189,7 @@ def get_city_data(data, type=None):
                 datas = line.split(',')
                 indexes = dict()
                 
-                for index, key in enumerate(_types):
+                for index, key in enumerate(types):
                     indexes[key] = float(datas[index + 1])
             
                 zipcodes[datas[0]] = indexes
