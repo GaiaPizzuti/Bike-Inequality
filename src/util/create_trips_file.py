@@ -62,14 +62,18 @@ def create_trips_file(city, filtered):
             # increment the number of trips from departure to arrival
             stats[departure][arrival] += 1
     
-    if spring:
-        output_file = os.path.join(data_trips, 'spring')
-    elif filtered:
+    if filtered:
         output_file = data_filtered_trips
     else:
         output_file = data_trips
     
-    output_file = os.path.join(output_file, year)
+    if spring:
+        output_file = os.path.join(output_file, 'spring', year)
+    else:
+        output_file = os.path.join(output_file, year)
+
+    # create the output folder if it does not exist
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     
     with open(os.path.join(output_file, city) + '.csv', 'w') as f:
         f.write('departure,arrival,trips\n')
