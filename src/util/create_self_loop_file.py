@@ -27,9 +27,13 @@ def create_self_loop_file(city, year, filtered=False):
         departure = row['departure']
         arrival = row['arrival']
         trips = row['trips']
-
+        
+        # non ha molto senso fare da arrival -> nel centro arrivano milioni di persone
+        # self loop -> pensato per chi vive nel nodo e rimane nel nodo
         if arrival not in self_loops:
             self_loops[arrival] = {'loop': 0, 'total': 0}
+        #if departure not in self_loops:
+        #    self_loops[departure] = {'loop': 0, 'total': 0}
         
         if departure == arrival:
             self_loops[arrival]['loop'] += trips
